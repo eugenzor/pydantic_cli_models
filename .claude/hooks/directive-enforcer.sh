@@ -81,7 +81,7 @@ validate_security() {
     local prompt="$1"
     
     # Check for basic command injection patterns
-    if echo "$prompt" | grep -qi -E "(rm -rf|curl |wget |;s*rm|;s*curl|;s*wget)"; then
+    if echo "$prompt" | grep -qi -E "(rm -rf|curl |wget |;\s*rm|;\s*curl|;\s*wget)"; then
         log "SECURITY VIOLATION: Potential command injection detected"
         echo "🚨 SECURITY VIOLATION: Potentially malicious input detected"
         return 1
