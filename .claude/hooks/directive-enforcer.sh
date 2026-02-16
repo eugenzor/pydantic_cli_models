@@ -14,7 +14,7 @@ log() {
 # Initialize environment variables if not set
 USER_PROMPT=${USER_PROMPT:-""}
 TOOL_NAME=${TOOL_NAME:-""}
-CLAUDE_PROJECT_DIR=${CLAUDE_PROJECT_DIR:-"/mnt/h/Active/taskmaster-agent-claude-code"}
+CLAUDE_PROJECT_DIR=${CLAUDE_PROJECT_DIR:?CLAUDE_PROJECT_DIR must be set}
 
 log "DIRECTIVE ENFORCEMENT TRIGGERED - Tool: $TOOL_NAME"
 
