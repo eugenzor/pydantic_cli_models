@@ -4,7 +4,7 @@
 # Collects performance metrics and coordination statistics for research validation
 
 # Set up metrics storage
-PROJECT_DIR=${CLAUDE_PROJECT_DIR:-"/mnt/h/Active/taskmaster-agent-claude-code"}
+PROJECT_DIR=${CLAUDE_PROJECT_DIR:?CLAUDE_PROJECT_DIR must be set}
 METRICS_DIR="$PROJECT_DIR/.claude-collective/metrics"
 METRICS_FILE="$METRICS_DIR/metrics-$(date +%Y%m%d).json"
 LOG_FILE="$METRICS_DIR/collective-metrics.log"
