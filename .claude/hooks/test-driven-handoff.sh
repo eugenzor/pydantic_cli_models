@@ -74,7 +74,7 @@ if [[ -z "$AGENT_OUTPUT" && -n "$TRANSCRIPT_PATH" && -f "$TRANSCRIPT_PATH" ]]; t
     log "Extracted from transcript: $(echo "$AGENT_OUTPUT" | head -c 100)..."
 fi
 HANDOFF_TOKEN=${HANDOFF_TOKEN:-""}
-CLAUDE_PROJECT_DIR=${CLAUDE_PROJECT_DIR:-"/mnt/h/Active/taskmaster-agent-claude-code"}
+CLAUDE_PROJECT_DIR=${CLAUDE_PROJECT_DIR:?CLAUDE_PROJECT_DIR must be set}
 
 log "TRUE TEST-DRIVEN HANDOFF VALIDATION - Event: $EVENT, Agent: $SUBAGENT_NAME"
 log "JSON INPUT: $INPUT_JSON"
