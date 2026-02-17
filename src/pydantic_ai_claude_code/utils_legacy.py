@@ -15,6 +15,7 @@ from typing import cast
 
 from .exceptions import ClaudeOAuthError
 from .types import ClaudeCodeSettings, ClaudeJSONResponse, ClaudeStreamEvent
+from ._utils import clean_subprocess_env
 
 logger = logging.getLogger(__name__)
 
@@ -533,8 +534,8 @@ def build_claude_command(
                 json.dump(config, f)
 
             # Redirect Claude config/debug to /tmp to avoid ~/.claude/ writes
-            claude_config_dir = "/tmp/claude_sandbox_config"
-            os.makedirs(claude_config_dir, exist_ok=True)
+            claude_config_dir = tempfile.mkdtemp(prefix="claude_sandbox_config_")
+            os.chmod(claude_config_dir, 0o700)
 
             # Copy OAuth credentials from ~/.claude/ to sandbox config dir
             # This allows Claude to authenticate while keeping debug logs in /tmp
@@ -781,12 +782,11 @@ def _execute_sync_command(
     """
     start_time = time.time()
 
-    # Get sandbox environment variables if present
-    env = None
-    if settings and settings.get("__sandbox_env"):
-        env = os.environ.copy()
-        env.update(settings["__sandbox_env"])
-        logger.debug("Using sandbox environment: %s", settings["__sandbox_env"])
+    # Build subprocess env (strip CLAUDECODE to avoid nested-session guard)
+    sandbox_extra = settings.get("__sandbox_env") if settings else None
+    env = clean_subprocess_env(sandbox_extra)
+    if sandbox_extra:
+        logger.debug("Using sandbox environment: %s", sandbox_extra)
 
     try:
         logger.info("Running Claude CLI synchronously in %s", cwd)
@@ -1182,12 +1182,11 @@ async def _execute_async_command(
     start_time = time.time()
     logger.info("Running Claude CLI asynchronously in %s", cwd)
 
-    # Get sandbox environment variables if present
-    env = None
-    if settings and settings.get("__sandbox_env"):
-        env = os.environ.copy()
-        env.update(settings["__sandbox_env"])
-        logger.debug("Using sandbox environment: %s", settings["__sandbox_env"])
+    # Build subprocess env (strip CLAUDECODE to avoid nested-session guard)
+    sandbox_extra = settings.get("__sandbox_env") if settings else None
+    env = clean_subprocess_env(sandbox_extra)
+    if sandbox_extra:
+        logger.debug("Using sandbox environment: %s", sandbox_extra)
 
     process = await create_subprocess_async(cmd, cwd, env)
 

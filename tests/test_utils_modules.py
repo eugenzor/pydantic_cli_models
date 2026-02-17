@@ -58,9 +58,9 @@ class TestFileUtils:
         (base_dir / "2").mkdir()
         (base_dir / "5").mkdir()  # Gap in numbering
 
-        # Should create "4" (total count + 1)
+        # Should create "6" (max + 1)
         result = get_next_call_subdirectory(str(base_dir))
-        assert result == base_dir / "4"
+        assert result == base_dir / "6"
 
     def test_get_next_call_subdirectory_ignores_non_numeric_dirs(self, tmp_path):
         """Test that non-numeric directories are ignored."""

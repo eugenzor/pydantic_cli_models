@@ -15,6 +15,7 @@ For new code, use:
 from ._utils.json_utils import strip_markdown_code_fence, extract_json_from_text
 from ._utils.type_utils import convert_primitive_value, get_type_description
 from ._utils.file_utils import get_next_call_subdirectory, copy_additional_files
+from ._utils import clean_subprocess_env
 
 # Re-export from core modules
 from .core.oauth_handler import detect_oauth_error
@@ -650,9 +651,9 @@ def build_claude_command(
             with os.fdopen(config_fd, 'w') as f:
                 json.dump(config, f)
 
-            # Redirect Claude config/debug to /tmp to avoid ~/.claude/ writes
-            claude_config_dir = "/tmp/claude_sandbox_config"
-            os.makedirs(claude_config_dir, exist_ok=True)
+            # Redirect Claude config/debug to a secure temp dir to avoid ~/.claude/ writes
+            claude_config_dir = tempfile.mkdtemp(prefix="claude_sandbox_config_")
+            os.chmod(claude_config_dir, 0o700)
 
             # Copy OAuth credentials from ~/.claude/ to sandbox config dir
             # This allows Claude to authenticate while keeping debug logs in /tmp
@@ -878,27 +879,15 @@ def _execute_sync_command(
     """
     start_time = time.time()
 
-    # Build subprocess environment with provider and sandbox env vars
-    env = None
-    has_custom_env = False
-
-    # Start with provider environment variables if present
+    # Build subprocess env (strip CLAUDECODE to avoid nested-session guard)
+    extra_env: dict[str, str] = {}
     if settings and settings.get("__provider_env"):
-        env = os.environ.copy()
-        env.update(settings["__provider_env"])
-        has_custom_env = True
+        extra_env.update(settings["__provider_env"])
         logger.debug("Using provider environment: %s", list(settings["__provider_env"].keys()))
-
-    # Add sandbox environment variables if present (these take precedence)
     if settings and settings.get("__sandbox_env"):
-        if env is None:
-            env = os.environ.copy()
-        env.update(settings["__sandbox_env"])
-        has_custom_env = True
+        extra_env.update(settings["__sandbox_env"])
         logger.debug("Using sandbox environment: %s", settings["__sandbox_env"])
-
-    if has_custom_env:
-        logger.debug("Custom environment configured for subprocess")
+    env = clean_subprocess_env(extra_env or None)
 
     try:
         logger.info("Running Claude CLI synchronously in %s", cwd)
@@ -1284,27 +1273,15 @@ async def _execute_async_command(
     start_time = time.time()
     logger.info("Running Claude CLI asynchronously in %s", cwd)
 
-    # Build subprocess environment with provider and sandbox env vars
-    env = None
-    has_custom_env = False
-
-    # Start with provider environment variables if present
+    # Build subprocess env (strip CLAUDECODE to avoid nested-session guard)
+    extra_env: dict[str, str] = {}
     if settings and settings.get("__provider_env"):
-        env = os.environ.copy()
-        env.update(settings["__provider_env"])
-        has_custom_env = True
+        extra_env.update(settings["__provider_env"])
         logger.debug("Using provider environment: %s", list(settings["__provider_env"].keys()))
-
-    # Add sandbox environment variables if present (these take precedence)
     if settings and settings.get("__sandbox_env"):
-        if env is None:
-            env = os.environ.copy()
-        env.update(settings["__sandbox_env"])
-        has_custom_env = True
+        extra_env.update(settings["__sandbox_env"])
         logger.debug("Using sandbox environment: %s", settings["__sandbox_env"])
-
-    if has_custom_env:
-        logger.debug("Custom environment configured for subprocess")
+    env = clean_subprocess_env(extra_env or None)
 
     process = await create_subprocess_async(cmd, cwd, env)
 

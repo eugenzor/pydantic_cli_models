@@ -594,15 +594,16 @@ class TestSandboxRuntime:
         with patch("tempfile.mkstemp", return_value=(99, "/tmp/config.json")):
             with patch("os.fdopen", mock_open()):
                 with patch("pydantic_ai_claude_code.core.sandbox_runtime.Path.home", return_value=tmp_path / "home"):
-                    with patch("os.makedirs"):
-                        with patch("shutil.copy2") as mock_copy:
-                            wrapped_cmd, env, config_path = wrap_command_with_sandbox(cmd, settings)
+                    with patch("tempfile.mkdtemp", return_value="/tmp/claude_sandbox_config_test"):
+                        with patch("os.chmod"):
+                            with patch("shutil.copy2") as mock_copy:
+                                wrapped_cmd, env, config_path = wrap_command_with_sandbox(cmd, settings)
 
-                            # Should have attempted to copy credentials
-                            assert mock_copy.called
-                            # Verify environment variables are set
-                            assert env["IS_SANDBOX"] == "1"
-                            assert "CLAUDE_CONFIG_DIR" in env
-                            assert env["CLAUDE_CONFIG_DIR"] == "/tmp/claude_sandbox_config"
-                            # Verify config path is returned
-                            assert config_path == "/tmp/config.json"
+                                # Should have attempted to copy credentials
+                                assert mock_copy.called
+                                # Verify environment variables are set
+                                assert env["IS_SANDBOX"] == "1"
+                                assert "CLAUDE_CONFIG_DIR" in env
+                                assert "claude_sandbox_config_" in env["CLAUDE_CONFIG_DIR"]
+                                # Verify config path is returned
+                                assert config_path == "/tmp/config.json"

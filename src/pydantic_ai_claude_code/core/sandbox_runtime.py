@@ -113,9 +113,9 @@ def wrap_command_with_sandbox(
         with os.fdopen(config_fd, 'w') as f:
             json.dump(config, f)
 
-        # Redirect Claude config/debug to /tmp to avoid ~/.claude/ writes
-        claude_config_dir = "/tmp/claude_sandbox_config"  # noqa: S108
-        os.makedirs(claude_config_dir, exist_ok=True)
+        # Redirect Claude config/debug to a secure temp dir to avoid ~/.claude/ writes
+        claude_config_dir = tempfile.mkdtemp(prefix="claude_sandbox_config_")
+        os.chmod(claude_config_dir, 0o700)
 
         # Copy OAuth credentials from ~/.claude/ to sandbox config dir
         # This allows Claude to authenticate while keeping debug logs in /tmp

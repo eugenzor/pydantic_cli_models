@@ -7,6 +7,11 @@ from pydantic_ai import Agent
 # Register the claude-code provider
 import pydantic_ai_claude_code  # noqa: F401
 
+pytestmark = pytest.mark.skipif(
+    __import__("os").environ.get("CLAUDECODE") is not None,
+    reason="Cannot run nested Claude Code sessions",
+)
+
 # Test constants for expected values
 EXPECTED_SUM_5_PLUS_3 = 8  # 5 + 3
 EXPECTED_TEST_NUMBER = 42  # Test number value

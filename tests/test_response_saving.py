@@ -11,6 +11,11 @@ from pydantic_ai import Agent
 import pydantic_ai_claude_code  # noqa: F401
 from pydantic_ai_claude_code.types import ClaudeCodeModelSettings
 
+pytestmark = pytest.mark.skipif(
+    __import__("os").environ.get("CLAUDECODE") is not None,
+    reason="Cannot run nested Claude Code sessions",
+)
+
 # Test constants
 EXPECTED_SUBDIR_COUNT_SINGLE = 1
 EXPECTED_SUBDIR_COUNT_DOUBLE = 2

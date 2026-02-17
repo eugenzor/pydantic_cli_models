@@ -67,7 +67,7 @@ def test_build_claude_command_with_sandbox():
     # Should store environment variables in settings (not in command)
     assert "__sandbox_env" in settings
     assert settings["__sandbox_env"]["IS_SANDBOX"] == "1"
-    assert settings["__sandbox_env"]["CLAUDE_CONFIG_DIR"] == "/tmp/claude_sandbox_config"
+    assert "claude_sandbox_config_" in settings["__sandbox_env"]["CLAUDE_CONFIG_DIR"]
 
     # Should still contain claude
     assert any("claude" in part for part in cmd)
@@ -143,7 +143,7 @@ def test_sandbox_integration():
     # Check environment variables are stored in settings (not in command)
     assert "__sandbox_env" in settings
     assert settings["__sandbox_env"]["IS_SANDBOX"] == "1"
-    assert settings["__sandbox_env"]["CLAUDE_CONFIG_DIR"] == "/tmp/claude_sandbox_config"
+    assert "claude_sandbox_config_" in settings["__sandbox_env"]["CLAUDE_CONFIG_DIR"]
 
 
 def test_sandbox_with_other_settings():

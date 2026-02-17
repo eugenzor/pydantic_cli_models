@@ -12,6 +12,11 @@ from pydantic_ai import Agent, BinaryContent, RunContext
 
 from pydantic_ai_claude_code.types import ClaudeCodeModelSettings
 
+pytestmark = pytest.mark.skipif(
+    __import__("os").environ.get("CLAUDECODE") is not None,
+    reason="Cannot run nested Claude Code sessions",
+)
+
 # Test constants
 ARCHIVED_CUSTOMER_ID = 12345  # Test customer ID for error handling
 

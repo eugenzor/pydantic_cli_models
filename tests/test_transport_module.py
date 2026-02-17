@@ -119,17 +119,17 @@ class TestEnhancedCLITransport:
                         assert result == {"result": "success"}
                         assert call_count == 3
 
-    def test_setup_working_directory_creates_temp(self):
+    def test_setup_working_directory_creates_temp(self, tmp_path):
         """Test working directory creation."""
+        mock_dir = str(tmp_path / "mock_dir")
         transport = EnhancedCLITransport("test prompt", {})
-        
-        with patch("tempfile.mkdtemp", return_value="/tmp/mock_dir"):
-            with patch("pathlib.Path.mkdir"):
-                with patch("pathlib.Path.write_text"):
-                    cwd = transport._setup_working_directory()
-                    
-                    assert "/tmp/mock_dir" in cwd
-                    assert transport.settings.get("__working_directory") is not None
+
+        with patch("tempfile.mkdtemp", return_value=mock_dir):
+            with patch("pydantic_ai_claude_code.transport.sdk_transport.save_prompt_debug"):
+                cwd = transport._setup_working_directory()
+
+                assert mock_dir in cwd
+                assert transport.settings.get("__working_directory") is not None
 
     def test_setup_working_directory_uses_existing(self):
         """Test using existing working directory."""
@@ -147,7 +147,7 @@ class TestEnhancedCLITransport:
         transport = EnhancedCLITransport("test prompt", {})
         transport.settings = {"__working_directory": "/tmp/test"}
         
-        with patch("pydantic_ai_claude_code.transport.sdk_transport.resolve_claude_cli_path", return_value="/usr/bin/claude"):
+        with patch("pydantic_ai_claude_code.utils_legacy.resolve_claude_cli_path", return_value="/usr/bin/claude"):
             cmd = transport._build_command()
             
             assert cmd[0] == "/usr/bin/claude"
@@ -160,7 +160,7 @@ class TestEnhancedCLITransport:
         transport = EnhancedCLITransport("test prompt", {"model": "sonnet"})
         transport.settings["__working_directory"] = "/tmp/test"
         
-        with patch("pydantic_ai_claude_code.transport.sdk_transport.resolve_claude_cli_path", return_value="/usr/bin/claude"):
+        with patch("pydantic_ai_claude_code.utils_legacy.resolve_claude_cli_path", return_value="/usr/bin/claude"):
             cmd = transport._build_command()
             
             assert "--model" in cmd
@@ -171,9 +171,9 @@ class TestEnhancedCLITransport:
         transport = EnhancedCLITransport("test prompt", {"use_sandbox_runtime": True})
         transport.settings["__working_directory"] = "/tmp/test"
         
-        with patch("pydantic_ai_claude_code.transport.sdk_transport.resolve_claude_cli_path", return_value="/usr/bin/claude"):
+        with patch("pydantic_ai_claude_code.utils_legacy.resolve_claude_cli_path", return_value="/usr/bin/claude"):
             with patch("pydantic_ai_claude_code.transport.sdk_transport.wrap_command_with_sandbox") as mock_wrap:
-                mock_wrap.return_value = (["srt", "--", "claude"], {"IS_SANDBOX": "1"})
+                mock_wrap.return_value = (["srt", "--", "claude"], {"IS_SANDBOX": "1"}, "/tmp/srt_config.json")
                 
                 cmd = transport._build_command()
                 
@@ -204,13 +204,14 @@ class TestEnhancedCLITransport:
     async def test_execute_command_timeout(self):
         """Test command execution with timeout."""
         transport = EnhancedCLITransport("test prompt", {})
-        
+
         mock_process = AsyncMock()
         mock_process.communicate = AsyncMock(side_effect=asyncio.TimeoutError())
         mock_process.kill = Mock()
-        
+        mock_process.wait = AsyncMock()
+
         with patch("asyncio.create_subprocess_exec", return_value=mock_process):
-            with pytest.raises(asyncio.TimeoutError):
+            with pytest.raises(RuntimeError, match="timeout"):
                 await transport._execute_command(
                     ["claude"],
                     "/tmp/test",
@@ -272,7 +273,7 @@ class TestIntegration:
         transport = EnhancedCLITransport("What is 2+2?", settings)
         
         # Mock all external dependencies
-        with patch("pydantic_ai_claude_code.transport.sdk_transport.resolve_claude_cli_path", return_value="/usr/bin/claude"):
+        with patch("pydantic_ai_claude_code.utils_legacy.resolve_claude_cli_path", return_value="/usr/bin/claude"):
             with patch("tempfile.mkdtemp", return_value="/tmp/mock"):
                 with patch("pathlib.Path.mkdir"):
                     with patch("pathlib.Path.iterdir", return_value=[]):

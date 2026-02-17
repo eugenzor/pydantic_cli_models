@@ -1,10 +1,17 @@
 """Basic integration tests for Claude Code model."""
 
+import os
+
 import pytest
 from pydantic import BaseModel
 from pydantic_ai import Agent
 
 from pydantic_ai_claude_code import ClaudeCodeProvider
+
+pytestmark = pytest.mark.skipif(
+    os.environ.get("CLAUDECODE") is not None,
+    reason="Cannot run nested Claude Code sessions",
+)
 
 # Test constants
 EXPECTED_MATH_RESULT = 12  # 5 + 7

@@ -3,12 +3,19 @@
 Uses real test files from tests/fixtures/ directory.
 """
 
+import os
 from pathlib import Path
 
+import pytest
 from pydantic_ai import Agent, BinaryContent
 
 # Import to trigger registration
 import pydantic_ai_claude_code  # noqa: F401
+
+pytestmark = pytest.mark.skipif(
+    os.environ.get("CLAUDECODE") is not None,
+    reason="Cannot run nested Claude Code sessions",
+)
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 

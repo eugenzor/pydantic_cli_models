@@ -25,9 +25,9 @@ class TestFileHandler:
     def test_create_structured_output_path_format(self):
         """Test that structured output path follows expected format."""
         path = create_structured_output_path()
-        
-        assert path.startswith("/tmp/claude_data_structure_")
-        assert len(path) > len("/tmp/claude_data_structure_")
+
+        assert "claude_data_structure_" in path
+        assert len(path) > len("claude_data_structure_")
 
     def test_create_structured_output_path_unique(self):
         """Test that multiple calls create unique paths."""
@@ -42,8 +42,8 @@ class TestFileHandler:
     def test_create_unstructured_output_path_format(self):
         """Test that unstructured output path follows expected format."""
         path = create_unstructured_output_path()
-        
-        assert path.startswith("/tmp/claude_unstructured_output_")
+
+        assert "claude_unstructured_output_" in path
         assert path.endswith(".txt")
 
     def test_create_unstructured_output_path_unique(self):

@@ -7,6 +7,11 @@ from pydantic_ai import Agent
 
 import pydantic_ai_claude_code  # noqa: F401 - triggers registration
 
+pytestmark = pytest.mark.skipif(
+    __import__("os").environ.get("CLAUDECODE") is not None,
+    reason="Cannot run nested Claude Code sessions",
+)
+
 # Test constants
 MIN_CHUNKS_FOR_STREAMING = 5
 MAX_TIME_TO_FIRST_CHUNK_MS = 5000

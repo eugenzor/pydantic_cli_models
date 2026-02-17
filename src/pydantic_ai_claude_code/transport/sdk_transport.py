@@ -32,6 +32,7 @@ from ..core.debug_saver import (
 from ..exceptions import ClaudeOAuthError
 from ..types import ClaudeCodeSettings, ClaudeJSONResponse
 from .._utils.file_utils import get_next_call_subdirectory, copy_additional_files
+from .._utils import clean_subprocess_env
 
 logger = logging.getLogger(__name__)
 
@@ -357,11 +358,9 @@ class EnhancedCLITransport:
         Raises:
             RuntimeError: If the subprocess does not complete within timeout_seconds.
         """
-        # Build environment
-        env = None
-        if self.settings.get("__sandbox_env"):
-            env = os.environ.copy()
-            env.update(self.settings["__sandbox_env"])
+        # Build environment (strip CLAUDECODE to avoid nested-session guard)
+        sandbox_env = self.settings.get("__sandbox_env")
+        env = clean_subprocess_env(sandbox_env) if sandbox_env else clean_subprocess_env()
 
         # Create subprocess
         process = await asyncio.create_subprocess_exec(
