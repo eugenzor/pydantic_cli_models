@@ -19,6 +19,8 @@ examples/.env
 report.md
 secrets/
 wheels/
+.coverage
+htmlcov/
 
 # Claude collective and task manager
 .claude-collective/
