@@ -25,3 +25,5 @@ htmlcov/
 # Claude collective and task manager
 .claude-collective/
 .taskmaster/
+
+RT/*

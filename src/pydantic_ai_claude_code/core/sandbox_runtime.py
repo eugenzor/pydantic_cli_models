@@ -64,23 +64,28 @@ def resolve_sandbox_runtime_path(settings: dict[str, Any] | None = None) -> str:
 
 def build_sandbox_config() -> dict[str, Any]:
     """
-    Create the sandbox permissions configuration used when running Claude in the sandbox.
+    Create the sandbox configuration for the srt (sandbox-runtime) tool.
 
-    The configuration includes an ordered list of allowed permission strings (e.g., shell access, read/write/edit to /tmp, and WebFetch access to api.anthropic.com).
+    The configuration uses the srt settings format with network and filesystem
+    top-level keys to control domain access and file read/write permissions.
 
     Returns:
-        sandbox_config (dict[str, Any]): A dict with a "permissions" key whose "allow" value is a list of permission specifiers.
+        sandbox_config (dict[str, Any]): A dict with "network" and "filesystem" keys
+            compatible with the @anthropic-ai/sandbox-runtime config format.
     """
     return {
-        "permissions": {
-            "allow": [
-                "Bash(*)",                          # Allow bash (OS sandbox blocks dangerous filesystem ops)
-                "Write(/tmp/**)",                   # Allow writes to /tmp (for outputs, debug logs, etc.)
-                "Read(/tmp/**)",                    # Allow reads from /tmp
-                "Edit(/tmp/**)",                    # Allow edits to /tmp files
-                "WebFetch(domain:api.anthropic.com)",  # Allow API calls to Anthropic (required for Claude to work)
-            ]
-        }
+        "network": {
+            "allowedDomains": [
+                "api.anthropic.com",
+                "*.anthropic.com",
+            ],
+            "deniedDomains": [],
+        },
+        "filesystem": {
+            "denyRead": [],
+            "allowWrite": ["/tmp"],
+            "denyWrite": [],
+        },
     }
 
 

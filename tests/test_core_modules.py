@@ -530,18 +530,23 @@ class TestSandboxRuntime:
                     resolve_sandbox_runtime_path()
 
     def test_build_sandbox_config_structure(self):
-        """Test sandbox configuration structure."""
+        """Test sandbox configuration structure uses srt format."""
         config = build_sandbox_config()
-        
-        assert "permissions" in config
-        assert "allow" in config["permissions"]
-        assert isinstance(config["permissions"]["allow"], list)
-        
-        # Check for required permissions
-        allow_list = config["permissions"]["allow"]
-        assert any("Bash" in perm for perm in allow_list)
-        assert any("/tmp" in perm for perm in allow_list)
-        assert any("api.anthropic.com" in perm for perm in allow_list)
+
+        # Check for srt config format with network and filesystem keys
+        assert "network" in config
+        assert "allowedDomains" in config["network"]
+        assert "deniedDomains" in config["network"]
+        assert isinstance(config["network"]["allowedDomains"], list)
+
+        assert "filesystem" in config
+        assert "denyRead" in config["filesystem"]
+        assert "allowWrite" in config["filesystem"]
+        assert "denyWrite" in config["filesystem"]
+
+        # Check for required domains and paths
+        assert any("anthropic.com" in domain for domain in config["network"]["allowedDomains"])
+        assert "/tmp" in config["filesystem"]["allowWrite"]
 
     def test_wrap_command_with_sandbox_basic(self):
         """Test wrapping command with sandbox."""

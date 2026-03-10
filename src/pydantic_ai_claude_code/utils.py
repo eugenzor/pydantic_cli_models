@@ -630,19 +630,22 @@ def build_claude_command(
     if settings.get("use_sandbox_runtime"):
         srt_path = resolve_sandbox_runtime_path(settings)
 
-        # Sandbox config: Allow full /tmp access as required by user
-        # "claude code should be able to do any write and read operation in /tmp"
+        # Sandbox config using srt (sandbox-runtime) format
         # Network allowed for Claude API calls to Anthropic
+        # Filesystem: full read access, write only to /tmp
         config = {
-            "permissions": {
-                "allow": [
-                    "Bash(*)",                          # Allow bash (OS sandbox blocks dangerous filesystem ops)
-                    "Write(/tmp/**)",                   # Allow writes to /tmp (for outputs, debug logs, etc.)
-                    "Read(/tmp/**)",                    # Allow reads from /tmp
-                    "Edit(/tmp/**)",                    # Allow edits to /tmp files
-                    "WebFetch(domain:api.anthropic.com)",  # Allow API calls to Anthropic (required for Claude to work)
-                ]
-            }
+            "network": {
+                "allowedDomains": [
+                    "api.anthropic.com",
+                    "*.anthropic.com",
+                ],
+                "deniedDomains": [],
+            },
+            "filesystem": {
+                "denyRead": [],
+                "allowWrite": ["/tmp"],
+                "denyWrite": [],
+            },
         }
 
         # Write config to temp file
