@@ -225,6 +225,10 @@ class ClaudeCodeModel(Model):
                 if isinstance(hooks_config, list):
                     settings["__hooks__"] = hooks_config
 
+            # Handle sandbox runtime override
+            if "use_sandbox_runtime" in model_settings:
+                settings["use_sandbox_runtime"] = model_settings["use_sandbox_runtime"]
+
             # Handle extra CLI args
             if "extra_cli_args" in model_settings:
                 settings["extra_cli_args"] = model_settings["extra_cli_args"]

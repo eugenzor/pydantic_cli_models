@@ -51,7 +51,7 @@ Logging:
 
 import logging
 
-from .exceptions import ClaudeOAuthError
+from .exceptions import ClaudeOAuthError, SandboxNotSupportedError
 from .model import ClaudeCodeModel
 from .provider import ClaudeCodeProvider
 from .provider_presets import (
@@ -102,6 +102,7 @@ __all__ = [
     "ClaudeCodeProvider",
     "ClaudeCodeSettings",
     "ClaudeOAuthError",
+    "SandboxNotSupportedError",
     "MCPTool",
     "ProviderPreset",
     "get_preset",

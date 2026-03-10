@@ -1,6 +1,15 @@
 """Exception classes for Claude Code model."""
 
 
+class SandboxNotSupportedError(RuntimeError):
+    """Raised when the sandbox runtime (bwrap) is not supported in the current environment.
+
+    This typically occurs when the kernel lacks capabilities for creating
+    network namespaces (e.g., CAP_NET_ADMIN), such as in containers or
+    restricted environments.
+    """
+
+
 class ClaudeOAuthError(RuntimeError):
     """Raised when Claude Code CLI OAuth token is expired or revoked.
 

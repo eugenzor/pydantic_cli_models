@@ -94,6 +94,7 @@ __all__ = [
     # Retry logic
     "detect_rate_limit",
     "calculate_wait_time",
+    "detect_sandbox_failure",
     "detect_cli_infrastructure_failure",
     # Sandbox runtime
     "resolve_sandbox_runtime_path",
@@ -152,7 +153,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import cast
 
-from .exceptions import ClaudeOAuthError
+from .exceptions import ClaudeOAuthError, SandboxNotSupportedError
 from .types import ClaudeCodeSettings, ClaudeJSONResponse, ClaudeStreamEvent
 
 logger = logging.getLogger(__name__)
@@ -436,6 +437,30 @@ def calculate_wait_time(reset_time_str: str) -> int:
             e,
         )
         return 300
+
+
+def detect_sandbox_failure(stderr: str) -> bool:
+    """Detect sandbox (bwrap) failures that indicate sandboxing is not supported.
+
+    These are non-retryable errors where the sandbox environment cannot be
+    created due to missing kernel capabilities or permissions. The correct
+    action is to fall back to running without the sandbox.
+
+    Args:
+        stderr: Error output from Claude CLI
+
+    Returns:
+        True if error indicates sandbox/bwrap failure
+    """
+    sandbox_indicators = [
+        "bwrap:",                  # Any bubblewrap error
+        "Failed RTM_NEWADDR",      # Network namespace creation failed
+        "Operation not permitted",  # General permission denial (with bwrap context)
+    ]
+    # Require "bwrap" to be present to avoid false positives on generic "Operation not permitted"
+    if "bwrap" in stderr:
+        return any(indicator in stderr for indicator in sandbox_indicators)
+    return False
 
 
 def detect_cli_infrastructure_failure(stderr: str) -> bool:
@@ -1097,12 +1122,18 @@ def _classify_execution_error(
             reauth_instruction=oauth_message if "/login" in oauth_message else "Please run /login"
         )
 
-    # Priority 2: Check rate limit (less specific, could have false positives)
+    # Priority 2: Check sandbox (bwrap) failures - non-retryable, needs fallback
+    if detect_sandbox_failure(stderr_text):
+        raise SandboxNotSupportedError(
+            f"Sandbox (bwrap) not supported in this environment: {stderr_text.strip()}"
+        )
+
+    # Priority 3: Check rate limit (less specific, could have false positives)
     should_retry, wait_seconds = _check_rate_limit(stdout_text, stderr_text, returncode, retry_enabled)
     if should_retry:
         return ("retry_rate_limit", wait_seconds)
 
-    # Priority 3: Check for infrastructure failures
+    # Priority 4: Check for infrastructure failures
     if detect_cli_infrastructure_failure(stderr_text):
         return ("retry_infra", 0.0)
 
@@ -1231,6 +1262,18 @@ def run_claude_sync(
                     MAX_CLI_RETRIES,
                 )
                 raise RuntimeError("Claude CLI infrastructure failure persisted")
+
+        except SandboxNotSupportedError:
+            # Sandbox (bwrap) failed - fall back to running without sandbox
+            logger.warning(
+                "Sandbox runtime not supported in this environment. "
+                "Falling back to running without sandbox."
+            )
+            if settings:
+                settings["use_sandbox_runtime"] = False
+            cmd = build_claude_command(settings=settings, output_format="json")
+            # Retry immediately without sandbox (don't count as infrastructure retry)
+            continue
 
         except RuntimeError as e:
             # If this is the last attempt or not an infrastructure error, re-raise
@@ -1420,6 +1463,18 @@ async def run_claude_async(
                     MAX_CLI_RETRIES,
                 )
                 raise RuntimeError("Claude CLI infrastructure failure persisted")
+
+        except SandboxNotSupportedError:
+            # Sandbox (bwrap) failed - fall back to running without sandbox
+            logger.warning(
+                "Sandbox runtime not supported in this environment. "
+                "Falling back to running without sandbox."
+            )
+            if settings:
+                settings["use_sandbox_runtime"] = False
+            cmd = build_claude_command(settings=settings, output_format="json")
+            # Retry immediately without sandbox (don't count as infrastructure retry)
+            continue
 
         except RuntimeError as e:
             # If this is the last attempt or not an infrastructure error, re-raise
