@@ -1,18 +1,14 @@
 """Tests for SDK types and errors."""
 
-import pytest
 
 from pydantic_ai_claude_code._sdk import (
     # Errors
     AuthenticationError,
-    CLIConnectionError,
-    CLINotFoundError,
-    ClaudeSDKError,
-    ProcessError,
-    RateLimitError,
-    TimeoutError,
     # Types
     ClaudeAgentOptions,
+    ClaudeSDKError,
+    CLIConnectionError,
+    CLINotFoundError,
     HookConfig,
     HookEvent,
     HookMatcher,
@@ -20,9 +16,12 @@ from pydantic_ai_claude_code._sdk import (
     PermissionResult,
     PermissionResultAllow,
     PermissionResultDeny,
+    ProcessError,
+    RateLimitError,
     SDKResponse,
     SDKUsage,
     TextBlock,
+    TimeoutError,
     ToolPermissionContext,
     ToolResultBlock,
     ToolUseBlock,
@@ -254,7 +253,6 @@ class TestImportExports:
             CanUseTool,
             ContentBlock,
             Message,
-            PermissionResult,
             ResultMessage,
             UserMessage,
         )

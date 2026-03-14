@@ -43,7 +43,12 @@ class ProcessError(ClaudeSDKError):
 class TimeoutError(ClaudeSDKError):
     """Operation timed out."""
 
-    def __init__(self, message: str = "Operation timed out", *, timeout_seconds: int | None = None):
+    def __init__(
+        self,
+        message: str = "Operation timed out",
+        *,
+        timeout_seconds: int | None = None,
+    ):
         super().__init__(message)
         self.timeout_seconds = timeout_seconds
 

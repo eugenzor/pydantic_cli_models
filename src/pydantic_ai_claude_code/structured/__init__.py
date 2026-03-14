@@ -6,9 +6,9 @@ and two-phase function selection.
 """
 
 from .converter import (
-    write_structure_to_filesystem,
-    read_structure_from_filesystem,
     build_structure_instructions,
+    read_structure_from_filesystem,
+    write_structure_to_filesystem,
 )
 from .file_handler import (
     create_structured_output_path,
@@ -17,9 +17,9 @@ from .file_handler import (
     read_unstructured_output,
 )
 from .function_selector import (
+    build_argument_collection_prompt,
     build_function_selection_prompt,
     parse_function_selection,
-    build_argument_collection_prompt,
 )
 
 __all__ = [

@@ -23,14 +23,12 @@ from pydantic_ai.messages import (
     ModelResponse,
     TextPart,
     ToolCallPart,
-    ToolReturnPart,
     UserPromptPart,
 )
 from pydantic_ai.models import ModelRequestParameters
 
 from pydantic_ai_claude_code.model import ClaudeCodeModel
 from pydantic_ai_claude_code.types import ClaudeCodeSettings, ClaudeJSONResponse
-
 
 # ===== Helpers =====
 
@@ -278,8 +276,11 @@ class TestHandleFunctionSelectionFollowup:
         result = ModelResponse(parts=[TextPart(content="direct")])
 
         out = await model._handle_function_selection_followup(
-            [], ModelRequestParameters(function_tools=[tool]),
-            settings, response, result,
+            [],
+            ModelRequestParameters(function_tools=[tool]),
+            settings,
+            response,
+            result,
         )
         assert out is result
 
@@ -295,12 +296,16 @@ class TestHandleFunctionSelectionFollowup:
         result = ModelResponse(parts=[TextPart(content="placeholder")])
 
         with mock.patch.object(
-            model, "_handle_unstructured_follow_up",
+            model,
+            "_handle_unstructured_follow_up",
             return_value=ModelResponse(parts=[TextPart(content="unstructured")]),
         ) as mock_follow_up:
             out = await model._handle_function_selection_followup(
-                [], ModelRequestParameters(function_tools=[tool]),
-                settings, response, result,
+                [],
+                ModelRequestParameters(function_tools=[tool]),
+                settings,
+                response,
+                result,
             )
             mock_follow_up.assert_awaited_once()
             assert out.parts[0].content == "unstructured"
@@ -318,13 +323,16 @@ class TestHandleFunctionSelectionFollowup:
         result = ModelResponse(parts=[TextPart(content="placeholder")])
 
         with mock.patch.object(
-            model, "_handle_structured_follow_up",
+            model,
+            "_handle_structured_follow_up",
             return_value=ModelResponse(parts=[TextPart(content="structured")]),
         ) as mock_follow_up:
             out = await model._handle_function_selection_followup(
                 [],
                 ModelRequestParameters(function_tools=[tool], output_tools=[out_tool]),
-                settings, response, result,
+                settings,
+                response,
+                result,
             )
             mock_follow_up.assert_awaited_once()
 
@@ -342,13 +350,16 @@ class TestHandleFunctionSelectionFollowup:
         result = ModelResponse(parts=[TextPart(content="placeholder")])
 
         with mock.patch.object(
-            model, "_handle_argument_collection",
+            model,
+            "_handle_argument_collection",
             return_value=ModelResponse(parts=[TextPart(content="args collected")]),
         ) as mock_collect:
             out = await model._handle_function_selection_followup(
                 [],
                 ModelRequestParameters(function_tools=[tool]),
-                settings, response, result,
+                settings,
+                response,
+                result,
             )
             mock_collect.assert_awaited_once()
 
@@ -364,8 +375,11 @@ class TestHandleFunctionSelectionFollowup:
         result = ModelResponse(parts=[TextPart(content="original")])
 
         out = await model._handle_function_selection_followup(
-            [], ModelRequestParameters(function_tools=[tool]),
-            settings, response, result,
+            [],
+            ModelRequestParameters(function_tools=[tool]),
+            settings,
+            response,
+            result,
         )
         assert out is result
 
@@ -493,10 +507,12 @@ class TestHandleStructuredOutputResponse:
     def test_json_decode_error_returns_text(self):
         model = ClaudeCodeModel("sonnet")
         response = _base_response()
-        out_tool = _make_mock_output_tool(schema={
-            "type": "object",
-            "properties": {"a": {"type": "string"}, "b": {"type": "string"}},
-        })
+        out_tool = _make_mock_output_tool(
+            schema={
+                "type": "object",
+                "properties": {"a": {"type": "string"}, "b": {"type": "string"}},
+            }
+        )
         settings: ClaudeCodeSettings = {}
 
         result = model._handle_structured_output_response(
@@ -560,9 +576,7 @@ class TestConvertResponseRouting:
         response = _base_response(result='{"answer": "hello"}')
         out_tool = _make_mock_output_tool()
 
-        result = model._convert_response(
-            response, output_tools=[out_tool], settings={}
-        )
+        result = model._convert_response(response, output_tools=[out_tool], settings={})
         assert any(isinstance(p, ToolCallPart) for p in result.parts)
 
     def test_routes_to_unstructured_output(self):
@@ -586,7 +600,9 @@ class TestRequestStreamErrors:
         mrp = ModelRequestParameters(output_tools=[out_tool])
         messages = [ModelRequest(parts=[UserPromptPart(content="Hi")])]
 
-        with pytest.raises(ValueError, match="Streaming is not supported with structured output"):
+        with pytest.raises(
+            ValueError, match="Streaming is not supported with structured output"
+        ):
             async with model.request_stream(messages, None, mrp):
                 pass
 
@@ -597,7 +613,9 @@ class TestRequestStreamErrors:
         mrp = ModelRequestParameters(function_tools=[tool])
         messages = [ModelRequest(parts=[UserPromptPart(content="Hi")])]
 
-        with pytest.raises(ValueError, match="Streaming is not supported with function tools"):
+        with pytest.raises(
+            ValueError, match="Streaming is not supported with function tools"
+        ):
             async with model.request_stream(messages, None, mrp):
                 pass
 
@@ -728,7 +746,11 @@ class TestHandleFunctionSelectionEdgeCases:
         result = model._handle_function_selection_response(
             "I'm not sure which to pick", response, settings
         )
-        assert any("Could not parse" in p.content for p in result.parts if isinstance(p, TextPart))
+        assert any(
+            "Could not parse" in p.content
+            for p in result.parts
+            if isinstance(p, TextPart)
+        )
 
     def test_available_functions_not_dict(self):
         model = ClaudeCodeModel("sonnet")
@@ -940,9 +962,7 @@ class TestRequestMethod:
         ):
             result = await model.request(messages, None, mrp)
 
-        assert any(
-            isinstance(p, (ToolCallPart, TextPart)) for p in result.parts
-        )
+        assert any(isinstance(p, (ToolCallPart, TextPart)) for p in result.parts)
 
 
 # ===== _handle_structured_follow_up =====
@@ -1080,7 +1100,9 @@ class TestHandleArgumentCollection:
             {"get_weather": _make_mock_tool()},
             response,
         )
-        assert any("not found" in p.content for p in result.parts if isinstance(p, TextPart))
+        assert any(
+            "not found" in p.content for p in result.parts if isinstance(p, TextPart)
+        )
 
     @pytest.mark.asyncio
     async def test_successful_collection(self):

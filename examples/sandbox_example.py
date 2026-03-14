@@ -22,10 +22,12 @@ def basic_sandbox_example():
     print("\n=== Basic Sandbox Mode ===")
     print("Running Claude in sandbox with IS_SANDBOX=1 for autonomous execution\n")
 
-    provider = ClaudeCodeProvider({
-        "model": "sonnet",
-        "use_sandbox_runtime": True,  # Enable sandbox wrapping
-    })
+    provider = ClaudeCodeProvider(
+        {
+            "model": "sonnet",
+            "use_sandbox_runtime": True,  # Enable sandbox wrapping
+        }
+    )
 
     agent = Agent("claude-code:sonnet", provider=provider)
 
@@ -40,11 +42,13 @@ async def async_sandbox_example():
     print("\n=== Async Sandbox Mode ===")
     print("Processing multiple tasks autonomously in sandbox\n")
 
-    provider = ClaudeCodeProvider({
-        "model": "sonnet",
-        "use_sandbox_runtime": True,
-        "timeout_seconds": 1800,  # 30 minutes for batch processing
-    })
+    provider = ClaudeCodeProvider(
+        {
+            "model": "sonnet",
+            "use_sandbox_runtime": True,
+            "timeout_seconds": 1800,  # 30 minutes for batch processing
+        }
+    )
 
     agent = Agent("claude-code:sonnet", provider=provider)
 
@@ -69,11 +73,13 @@ def custom_sandbox_path_example():
     print("\n=== Custom Sandbox Path ===")
     print("Using custom srt binary location\n")
 
-    provider = ClaudeCodeProvider({
-        "model": "sonnet",
-        "use_sandbox_runtime": True,
-        "sandbox_runtime_path": "/usr/local/bin/srt",  # Custom path
-    })
+    provider = ClaudeCodeProvider(
+        {
+            "model": "sonnet",
+            "use_sandbox_runtime": True,
+            "sandbox_runtime_path": "/usr/local/bin/srt",  # Custom path
+        }
+    )
 
     agent = Agent("claude-code:sonnet", provider=provider)
 
@@ -86,12 +92,14 @@ def production_use_case():
     print("\n=== Production Use Case ===")
     print("Running untrusted code analysis in isolated sandbox\n")
 
-    provider = ClaudeCodeProvider({
-        "model": "sonnet",
-        "use_sandbox_runtime": True,
-        "working_directory": "/tmp/code_analysis",
-        "timeout_seconds": 3600,  # 1 hour
-    })
+    provider = ClaudeCodeProvider(
+        {
+            "model": "sonnet",
+            "use_sandbox_runtime": True,
+            "working_directory": "/tmp/code_analysis",
+            "timeout_seconds": 3600,  # 1 hour
+        }
+    )
 
     agent = Agent("claude-code:sonnet", provider=provider)
 
@@ -128,21 +136,25 @@ def comparison_example():
 
     # Standard mode: requires permission prompts (non-interactive)
     print("1. Standard mode (--dangerously-skip-permissions):")
-    standard_provider = ClaudeCodeProvider({
-        "model": "sonnet",
-        "use_sandbox_runtime": False,  # No sandbox
-        "dangerously_skip_permissions": True,  # Skip prompts but no isolation
-    })
+    standard_provider = ClaudeCodeProvider(
+        {
+            "model": "sonnet",
+            "use_sandbox_runtime": False,  # No sandbox
+            "dangerously_skip_permissions": True,  # Skip prompts but no isolation
+        }
+    )
     standard_agent = Agent("claude-code:sonnet", provider=standard_provider)
     result1 = standard_agent.run_sync("Echo 'Standard mode'")
     print(f"   Result: {result1.data}\n")
 
     # Sandbox mode: autonomous execution WITH OS-level isolation
     print("2. Sandbox mode (IS_SANDBOX=1 + srt isolation):")
-    sandbox_provider = ClaudeCodeProvider({
-        "model": "sonnet",
-        "use_sandbox_runtime": True,  # Sandbox with isolation
-    })
+    sandbox_provider = ClaudeCodeProvider(
+        {
+            "model": "sonnet",
+            "use_sandbox_runtime": True,  # Sandbox with isolation
+        }
+    )
     sandbox_agent = Agent("claude-code:sonnet", provider=sandbox_provider)
     result2 = sandbox_agent.run_sync("Echo 'Sandbox mode'")
     print(f"   Result: {result2.data}\n")
@@ -160,6 +172,7 @@ if __name__ == "__main__":
 
     # Check if srt is available
     import shutil
+
     if not shutil.which("srt"):
         print("\nERROR: sandbox-runtime (srt) not found!")
         print("Install with: npm install -g @anthropic-ai/sandbox-runtime")

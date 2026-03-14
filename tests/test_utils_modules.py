@@ -1,17 +1,13 @@
 """Tests for utility modules (_utils package)."""
 
-import json
-import shutil
-import tempfile
-from pathlib import Path
 
 import pytest
 
 from pydantic_ai_claude_code._utils import (
+    convert_primitive_value,
     copy_additional_files,
     get_next_call_subdirectory,
     strip_markdown_code_fence,
-    convert_primitive_value,
 )
 from pydantic_ai_claude_code._utils.json_utils import extract_json_from_text
 from pydantic_ai_claude_code._utils.type_utils import get_type_description
@@ -100,9 +96,7 @@ class TestFileUtils:
         dest_dir = tmp_path / "dest"
         dest_dir.mkdir()
 
-        copy_additional_files(
-            str(dest_dir), {"out1.txt": source1, "out2.txt": source2}
-        )
+        copy_additional_files(str(dest_dir), {"out1.txt": source1, "out2.txt": source2})
 
         assert (dest_dir / "out1.txt").read_text() == "content 1"
         assert (dest_dir / "out2.txt").read_text() == "content 2"
@@ -148,13 +142,13 @@ class TestJsonUtils:
 
     def test_strip_markdown_code_fence_with_json_prefix(self):
         """Test stripping ```json code fence."""
-        text = "```json\n{\"key\": \"value\"}\n```"
+        text = '```json\n{"key": "value"}\n```'
         result = strip_markdown_code_fence(text)
         assert result == '{"key": "value"}'
 
     def test_strip_markdown_code_fence_with_plain_backticks(self):
         """Test stripping plain ``` code fence."""
-        text = "```\n{\"key\": \"value\"}\n```"
+        text = '```\n{"key": "value"}\n```'
         result = strip_markdown_code_fence(text)
         assert result == '{"key": "value"}'
 
@@ -166,25 +160,25 @@ class TestJsonUtils:
 
     def test_strip_markdown_code_fence_only_leading(self):
         """Test stripping only leading fence."""
-        text = "```json\n{\"key\": \"value\"}"
+        text = '```json\n{"key": "value"}'
         result = strip_markdown_code_fence(text)
         assert result == '{"key": "value"}'
 
     def test_strip_markdown_code_fence_only_trailing(self):
         """Test stripping only trailing fence."""
-        text = "{\"key\": \"value\"}\n```"
+        text = '{"key": "value"}\n```'
         result = strip_markdown_code_fence(text)
         assert result == '{"key": "value"}'
 
     def test_extract_json_from_text_direct_parse(self):
         """Test direct JSON parsing after markdown stripping."""
-        text = "```json\n{\"name\": \"test\", \"value\": 42}\n```"
+        text = '```json\n{"name": "test", "value": 42}\n```'
         result = extract_json_from_text(text)
         assert result == {"name": "test", "value": 42}
 
     def test_extract_json_from_text_embedded_in_text(self):
         """Test extracting JSON from surrounding text."""
-        text = "Here is the data: {\"result\": \"success\"} and that's it"
+        text = 'Here is the data: {"result": "success"} and that\'s it'
         result = extract_json_from_text(text)
         assert result == {"result": "success"}
 

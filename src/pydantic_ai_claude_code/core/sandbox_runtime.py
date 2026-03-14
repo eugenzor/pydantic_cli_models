@@ -42,7 +42,9 @@ def resolve_sandbox_runtime_path(settings: dict[str, Any] | None = None) -> str:
     # Priority 2: Environment variable
     env_path = os.environ.get("SANDBOX_RUNTIME_PATH")
     if env_path:
-        logger.debug("Using sandbox-runtime from SANDBOX_RUNTIME_PATH env var: %s", env_path)
+        logger.debug(
+            "Using sandbox-runtime from SANDBOX_RUNTIME_PATH env var: %s", env_path
+        )
         return env_path
 
     # Priority 3: Auto-resolve from PATH
@@ -90,8 +92,7 @@ def build_sandbox_config() -> dict[str, Any]:
 
 
 def wrap_command_with_sandbox(
-    cmd: list[str],
-    settings: dict[str, Any] | None = None
+    cmd: list[str], settings: dict[str, Any] | None = None
 ) -> tuple[list[str], dict[str, str], str]:
     """
     Wrap a Claude CLI command so it runs under the sandbox-runtime with a sandboxed configuration and environment.
@@ -115,7 +116,7 @@ def wrap_command_with_sandbox(
     # Write config to temp file
     config_fd, config_path = tempfile.mkstemp(suffix=".json", prefix="srt_config_")
     try:
-        with os.fdopen(config_fd, 'w') as f:
+        with os.fdopen(config_fd, "w") as f:
             json.dump(config, f)
 
         # Redirect Claude config/debug to a secure temp dir to avoid ~/.claude/ writes
@@ -129,7 +130,9 @@ def wrap_command_with_sandbox(
         settings_file = home_claude_dir / "settings.json"
 
         if credentials_file.exists():
-            shutil.copy2(credentials_file, Path(claude_config_dir) / ".credentials.json")
+            shutil.copy2(
+                credentials_file, Path(claude_config_dir) / ".credentials.json"
+            )
             logger.debug("Copied credentials to sandbox config dir")
 
         if settings_file.exists():
@@ -145,7 +148,10 @@ def wrap_command_with_sandbox(
             "CLAUDE_CONFIG_DIR": claude_config_dir,
         }
 
-        logger.info("Wrapped Claude command with sandbox (IS_SANDBOX=1, CLAUDE_CONFIG_DIR=%s)", claude_config_dir)
+        logger.info(
+            "Wrapped Claude command with sandbox (IS_SANDBOX=1, CLAUDE_CONFIG_DIR=%s)",
+            claude_config_dir,
+        )
         logger.debug("Full sandboxed command: %s", " ".join(wrapped_cmd))
 
         return wrapped_cmd, sandbox_env, config_path

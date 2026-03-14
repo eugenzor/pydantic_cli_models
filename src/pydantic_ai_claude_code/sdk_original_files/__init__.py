@@ -32,7 +32,7 @@ NEXT_REVIEW_DATE = "2024-04-20"
 def get_sdk_info() -> dict:
     """
     Return SDK metadata for the compatibility layer.
-    
+
     Returns:
         dict: A mapping with keys:
             - "version": SDK version string.
@@ -52,12 +52,13 @@ def get_sdk_info() -> dict:
 try:
     from claude_agent_sdk import query as sdk_query
     from claude_agent_sdk.types import (
-        Message,
-        UserMessage,
         AssistantMessage,
+        Message,
         ResultMessage,
         SystemMessage,
+        UserMessage,
     )
+
     SDK_AVAILABLE = True
 except ImportError:
     SDK_AVAILABLE = False

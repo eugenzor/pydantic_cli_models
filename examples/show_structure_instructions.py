@@ -26,7 +26,9 @@ def show_simple_example() -> None:
         "required": ["name", "age"],
     }
 
-    instructions = build_structure_instructions(schema, "/tmp/claude_data_structure_abc123")
+    instructions = build_structure_instructions(
+        schema, "/tmp/claude_data_structure_abc123"
+    )
     print(instructions)
     print("\n")
 
@@ -54,7 +56,9 @@ def show_array_example() -> None:
         "required": ["title"],
     }
 
-    instructions = build_structure_instructions(schema, "/tmp/claude_data_structure_xyz789")
+    instructions = build_structure_instructions(
+        schema, "/tmp/claude_data_structure_xyz789"
+    )
     print(instructions)
     print("\n")
 
@@ -81,7 +85,9 @@ def show_nested_object_example() -> None:
         "required": ["book_title"],
     }
 
-    instructions = build_structure_instructions(schema, "/tmp/claude_data_structure_nested1")
+    instructions = build_structure_instructions(
+        schema, "/tmp/claude_data_structure_nested1"
+    )
     print(instructions)
     print("\n")
 
@@ -112,7 +118,9 @@ def show_array_of_objects_example() -> None:
         "required": ["query"],
     }
 
-    instructions = build_structure_instructions(schema, "/tmp/claude_data_structure_func123")
+    instructions = build_structure_instructions(
+        schema, "/tmp/claude_data_structure_func123"
+    )
     print(instructions)
     print("\n")
 
@@ -151,7 +159,9 @@ def show_complex_nested_example() -> None:
         "required": ["course_name"],
     }
 
-    instructions = build_structure_instructions(schema, "/tmp/claude_data_structure_complex")
+    instructions = build_structure_instructions(
+        schema, "/tmp/claude_data_structure_complex"
+    )
     print(instructions)
     print("\n")
 
@@ -253,7 +263,9 @@ def show_validation_errors() -> None:
     print("=" * 80)
     print("EXAMPLE 6: Validation Error Feedback")
     print("=" * 80)
-    print("\nThese are the error messages Claude CLI receives when the structure is invalid:\n")
+    print(
+        "\nThese are the error messages Claude CLI receives when the structure is invalid:\n"
+    )
 
     schema = {
         "properties": {

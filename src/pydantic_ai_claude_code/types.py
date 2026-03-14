@@ -150,19 +150,35 @@ class ClaudeCodeSettings(TypedDict, total=False):
     retry_on_rate_limit: bool
     timeout_seconds: int  # Timeout for Claude CLI execution (default: 900 = 15 minutes)
     claude_cli_path: str | None  # Path to claude CLI binary (defaults to auto-resolved)
-    extra_cli_args: list[str] | None  # Additional CLI arguments to pass through to claude CLI
-    debug_save_prompts: str | bool  # Save prompts and responses to directory (True = /tmp/claude_debug, or specify path)
-    additional_files: dict[str, Path]  # Additional files to copy into working directory (destination filename -> source Path)
+    extra_cli_args: (
+        list[str] | None
+    )  # Additional CLI arguments to pass through to claude CLI
+    debug_save_prompts: (
+        str | bool
+    )  # Save prompts and responses to directory (True = /tmp/claude_debug, or specify path)
+    additional_files: dict[
+        str, Path
+    ]  # Additional files to copy into working directory (destination filename -> source Path)
 
     # Sandbox settings (requires @anthropic-ai/sandbox-runtime installed)
-    use_sandbox_runtime: bool  # Enable sandbox-runtime wrapping with IS_SANDBOX=1 (default: True)
-    sandbox_runtime_path: str | None  # Path to srt binary (defaults to auto-resolved from PATH)
+    use_sandbox_runtime: (
+        bool  # Enable sandbox-runtime wrapping with IS_SANDBOX=1 (default: True)
+    )
+    sandbox_runtime_path: (
+        str | None
+    )  # Path to srt binary (defaults to auto-resolved from PATH)
 
     # Provider preset settings
     provider_preset: str | None  # Provider preset ID (e.g., "deepseek", "zhipu_glm")
-    provider_api_key: str | None  # API key for the provider (overrides ANTHROPIC_AUTH_TOKEN/ANTHROPIC_API_KEY)
-    provider_template_vars: dict[str, str]  # Template variable values (e.g., {"ENDPOINT_ID": "ep-xxx"})
-    provider_override_env: bool  # Override existing environment variables (default: False)
+    provider_api_key: (
+        str | None
+    )  # API key for the provider (overrides ANTHROPIC_AUTH_TOKEN/ANTHROPIC_API_KEY)
+    provider_template_vars: dict[
+        str, str
+    ]  # Template variable values (e.g., {"ENDPOINT_ID": "ep-xxx"})
+    provider_override_env: (
+        bool  # Override existing environment variables (default: False)
+    )
     __structured_output_file: str  # Internal: temp file path for structured output
     __unstructured_output_file: str  # Internal: temp file path for unstructured output
     __function_call_file: str  # Internal: temp file path for function call JSON
@@ -170,9 +186,13 @@ class ClaudeCodeSettings(TypedDict, total=False):
     __function_selection_mode__: bool  # Internal: whether function selection is active
     __available_functions__: dict[str, Any]  # Internal: available function definitions
     __selected_function__: str  # Internal: name of selected function
-    __function_selection_result__: str  # Internal: result of function selection ("none" or "selected")
+    __function_selection_result__: (
+        str  # Internal: result of function selection ("none" or "selected")
+    )
     __response_file_path: str  # Internal: path to save raw response JSON
     __working_directory: str  # Internal: determined working directory path
-    __temp_base_directory: str  # Internal: base directory for numbered subdirectories in temp workspaces
+    __temp_base_directory: (
+        str  # Internal: base directory for numbered subdirectories in temp workspaces
+    )
     __tool_name: str  # Internal: name of tool for argument collection
     __tool_description: str  # Internal: description of tool for argument collection

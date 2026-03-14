@@ -2,24 +2,23 @@
 
 import json
 import os
-import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
+from unittest.mock import Mock, mock_open, patch
 
 import pytest
 
 from pydantic_ai_claude_code.core import (
-    detect_oauth_error,
-    detect_rate_limit,
+    build_sandbox_config,
     calculate_wait_time,
     detect_cli_infrastructure_failure,
+    detect_oauth_error,
+    detect_rate_limit,
     get_debug_dir,
-    save_prompt_debug,
-    save_response_debug,
-    save_raw_response_to_working_dir,
     resolve_sandbox_runtime_path,
-    build_sandbox_config,
+    save_prompt_debug,
+    save_raw_response_to_working_dir,
+    save_response_debug,
     wrap_command_with_sandbox,
 )
 
@@ -29,82 +28,77 @@ class TestOAuthHandler:
 
     def test_detect_oauth_error_with_oauth_token_revoked(self):
         """Test detecting OAuth token revoked error."""
-        stdout = json.dumps({
-            "type": "result",
-            "subtype": "success",
-            "is_error": True,
-            "result": "OAuth token revoked - Please run /login"
-        })
-        
+        stdout = json.dumps(
+            {
+                "type": "result",
+                "subtype": "success",
+                "is_error": True,
+                "result": "OAuth token revoked - Please run /login",
+            }
+        )
+
         is_oauth, message = detect_oauth_error(stdout, "")
-        
+
         assert is_oauth is True
         assert "OAuth token revoked" in message
 
     def test_detect_oauth_error_with_authentication_failed(self):
         """Test detecting authentication failed error."""
-        stdout = json.dumps({
-            "type": "result",
-            "is_error": True,
-            "result": "Authentication failed - please login"
-        })
-        
+        stdout = json.dumps(
+            {
+                "type": "result",
+                "is_error": True,
+                "result": "Authentication failed - please login",
+            }
+        )
+
         is_oauth, message = detect_oauth_error(stdout, "")
-        
+
         assert is_oauth is True
         assert "Authentication failed" in message
 
     def test_detect_oauth_error_token_expired(self):
         """Test detecting token expired error."""
-        stdout = json.dumps({
-            "is_error": True,
-            "error": "token expired"
-        })
-        
+        stdout = json.dumps({"is_error": True, "error": "token expired"})
+
         is_oauth, message = detect_oauth_error(stdout, "")
-        
+
         assert is_oauth is True
         assert "token expired" in message
 
     def test_detect_oauth_error_no_error(self):
         """Test that non-error responses return False."""
-        stdout = json.dumps({
-            "type": "result",
-            "is_error": False,
-            "result": "Success"
-        })
-        
+        stdout = json.dumps({"type": "result", "is_error": False, "result": "Success"})
+
         is_oauth, message = detect_oauth_error(stdout, "")
-        
+
         assert is_oauth is False
         assert message is None
 
     def test_detect_oauth_error_non_oauth_error(self):
         """Test that non-OAuth errors return False."""
-        stdout = json.dumps({
-            "type": "result",
-            "is_error": True,
-            "result": "Some other error occurred"
-        })
-        
+        stdout = json.dumps(
+            {"type": "result", "is_error": True, "result": "Some other error occurred"}
+        )
+
         is_oauth, message = detect_oauth_error(stdout, "")
-        
+
         assert is_oauth is False
         assert message is None
 
     def test_detect_oauth_error_invalid_json(self):
         """Test handling of invalid JSON."""
         stdout = "not valid json"
-        
+
         is_oauth, message = detect_oauth_error(stdout, "")
-        
+
         assert is_oauth is False
         assert message is None
 
     def test_detect_oauth_error_empty_stdout(self):
         """Test handling of empty stdout."""
         is_oauth, message = detect_oauth_error("", "")
-        
+
         assert is_oauth is False
         assert message is None
 
@@ -115,27 +109,27 @@ class TestRetryLogic:
     def test_detect_rate_limit_with_time(self):
         """Test detecting rate limit with reset time."""
         error_output = "Rate limit reached, resets 3PM"
-        
+
         is_limited, reset_time = detect_rate_limit(error_output)
-        
+
         assert is_limited is True
         assert reset_time == "3PM"
 
     def test_detect_rate_limit_case_insensitive(self):
         """Test rate limit detection is case insensitive."""
         error_output = "LIMIT REACHED, RESETS 11AM"
-        
+
         is_limited, reset_time = detect_rate_limit(error_output)
-        
+
         assert is_limited is True
         assert reset_time == "11AM"
 
     def test_detect_rate_limit_no_rate_limit(self):
         """Test that non-rate-limit errors return False."""
         error_output = "Some other error"
-        
+
         is_limited, reset_time = detect_rate_limit(error_output)
-        
+
         assert is_limited is False
         assert reset_time is None
 
@@ -161,10 +155,14 @@ class TestRetryLogic:
 
         # The function resets minutes/seconds to 0, so the wait time depends on current time
         # Calculate expected: from now to the top of future_hour, plus 1 minute buffer
-        expected_reset = now.replace(hour=future_hour, minute=0, second=0, microsecond=0)
+        expected_reset = now.replace(
+            hour=future_hour, minute=0, second=0, microsecond=0
+        )
         if expected_reset < now:
             expected_reset += timedelta(days=1)
-        expected_wait = int((expected_reset - now).total_seconds()) + 60  # +60 for 1-min buffer
+        expected_wait = (
+            int((expected_reset - now).total_seconds()) + 60
+        )  # +60 for 1-min buffer
 
         # Allow some tolerance for test execution time (±5 seconds)
         assert abs(wait_seconds - expected_wait) <= 5
@@ -191,7 +189,9 @@ class TestRetryLogic:
         expected_reset = now.replace(hour=past_hour, minute=0, second=0, microsecond=0)
         if expected_reset < now:
             expected_reset += timedelta(days=1)
-        expected_wait = int((expected_reset - now).total_seconds()) + 60  # +60 for 1-min buffer
+        expected_wait = (
+            int((expected_reset - now).total_seconds()) + 60
+        )  # +60 for 1-min buffer
 
         # Should be at least 21 hours (allowing for minute variations)
         assert wait_seconds >= 75600  # At least 21 hours
@@ -201,38 +201,38 @@ class TestRetryLogic:
     def test_calculate_wait_time_invalid_format(self):
         """Test fallback for invalid time format."""
         wait_seconds = calculate_wait_time("invalid")
-        
+
         # Should fallback to 5 minutes
         assert wait_seconds == 300
 
     def test_detect_cli_infrastructure_failure_module_not_found(self):
         """Test detecting module not found errors."""
         stderr = "Error: Cannot find module 'yoga.wasm'"
-        
+
         assert detect_cli_infrastructure_failure(stderr) is True
 
     def test_detect_cli_infrastructure_failure_module_not_found_uppercase(self):
         """Test detecting MODULE_NOT_FOUND error."""
         stderr = "MODULE_NOT_FOUND: Cannot resolve module"
-        
+
         assert detect_cli_infrastructure_failure(stderr) is True
 
     def test_detect_cli_infrastructure_failure_enoent(self):
         """Test detecting ENOENT errors."""
         stderr = "Error: ENOENT: no such file or directory"
-        
+
         assert detect_cli_infrastructure_failure(stderr) is True
 
     def test_detect_cli_infrastructure_failure_eacces(self):
         """Test detecting EACCES errors."""
         stderr = "Error: EACCES: permission denied"
-        
+
         assert detect_cli_infrastructure_failure(stderr) is True
 
     def test_detect_cli_infrastructure_failure_no_error(self):
         """Test that non-infrastructure errors return False."""
         stderr = "Some other error"
-        
+
         assert detect_cli_infrastructure_failure(stderr) is False
 
 
@@ -253,24 +253,24 @@ class TestDebugSaver:
         """Test getting debug directory with custom path."""
         custom_path = str(tmp_path / "custom_debug")
         settings = {"debug_save_prompts": custom_path}
-        
+
         result = get_debug_dir(settings)
-        
+
         assert result == Path(custom_path)
         assert result.exists()
 
     def test_get_debug_dir_disabled(self):
         """Test that None is returned when debug is disabled."""
         settings = {"debug_save_prompts": False}
-        
+
         result = get_debug_dir(settings)
-        
+
         assert result is None
 
     def test_get_debug_dir_no_settings(self):
         """Test that None is returned with no settings."""
         result = get_debug_dir(None)
-        
+
         assert result is None
 
     def test_save_prompt_debug_creates_file(self, tmp_path):
@@ -278,9 +278,9 @@ class TestDebugSaver:
         debug_dir = tmp_path / "debug"
         settings = {"debug_save_prompts": str(debug_dir)}
         prompt = "Test prompt content"
-        
+
         save_prompt_debug(prompt, settings)
-        
+
         # Check that a file was created
         files = list(debug_dir.glob("*_prompt.md"))
         assert len(files) == 1
@@ -288,14 +288,16 @@ class TestDebugSaver:
 
     def test_save_prompt_debug_increments_counter(self, tmp_path, monkeypatch):
         """Test that prompt files are numbered sequentially."""
-        monkeypatch.setattr("pydantic_ai_claude_code.core.debug_saver._debug_counter", 0)
+        monkeypatch.setattr(
+            "pydantic_ai_claude_code.core.debug_saver._debug_counter", 0
+        )
 
         debug_dir = tmp_path / "debug"
         settings = {"debug_save_prompts": str(debug_dir)}
-        
+
         save_prompt_debug("First prompt", settings)
         save_prompt_debug("Second prompt", settings)
-        
+
         files = sorted(list(debug_dir.glob("*_prompt.md")))
         assert len(files) == 2
         assert files[0].name.startswith("001_")
@@ -306,15 +308,15 @@ class TestDebugSaver:
         debug_dir = tmp_path / "debug"
         settings = {"debug_save_prompts": str(debug_dir)}
         response = {"result": "test", "type": "success"}
-        
+
         # Need to save prompt first to increment counter
         save_prompt_debug("test", settings)
         save_response_debug(response, settings)
-        
+
         # Check that response file was created
         files = list(debug_dir.glob("*_response.json"))
         assert len(files) == 1
-        
+
         saved_response = json.loads(files[0].read_text())
         assert saved_response == response
 
@@ -323,9 +325,9 @@ class TestDebugSaver:
         response_file = tmp_path / "response.json"
         settings = {"__response_file_path": str(response_file)}
         response = {"data": "test response"}
-        
+
         save_raw_response_to_working_dir(response, settings)
-        
+
         assert response_file.exists()
         saved = json.loads(response_file.read_text())
         assert saved == response
@@ -400,13 +402,17 @@ class TestDebugSaver:
                 time.sleep(0.001)
 
                 # Save response
-                save_response_debug({"thread_id": thread_id, "result": "success"}, settings)
+                save_response_debug(
+                    {"thread_id": thread_id, "result": "success"}, settings
+                )
 
-                results.append({
-                    "thread_id": thread_id,
-                    "counter": counter,
-                    "settings_counter": settings.get("__debug_counter")
-                })
+                results.append(
+                    {
+                        "thread_id": thread_id,
+                        "counter": counter,
+                        "settings_counter": settings.get("__debug_counter"),
+                    }
+                )
             except Exception as e:
                 errors.append({"thread_id": thread_id, "error": str(e)})
 
@@ -446,10 +452,16 @@ class TestDebugSaver:
 
             # Find files for this counter
             thread_prompts = [f for f in prompt_files if f.name.startswith(counter_str)]
-            thread_responses = [f for f in response_files if f.name.startswith(counter_str)]
+            thread_responses = [
+                f for f in response_files if f.name.startswith(counter_str)
+            ]
 
-            assert len(thread_prompts) == 1, f"Thread {thread_id} should have exactly 1 prompt file"
-            assert len(thread_responses) == 1, f"Thread {thread_id} should have exactly 1 response file"
+            assert len(thread_prompts) == 1, (
+                f"Thread {thread_id} should have exactly 1 prompt file"
+            )
+            assert len(thread_responses) == 1, (
+                f"Thread {thread_id} should have exactly 1 response file"
+            )
 
             # Verify content matches
             prompt_content = thread_prompts[0].read_text()
@@ -503,30 +515,32 @@ class TestSandboxRuntime:
     def test_resolve_sandbox_runtime_path_from_settings(self):
         """Test resolving srt path from settings."""
         settings = {"sandbox_runtime_path": "/custom/path/to/srt"}
-        
+
         result = resolve_sandbox_runtime_path(settings)
-        
+
         assert result == "/custom/path/to/srt"
 
     def test_resolve_sandbox_runtime_path_from_env(self):
         """Test resolving srt path from environment variable."""
         with patch.dict(os.environ, {"SANDBOX_RUNTIME_PATH": "/env/path/srt"}):
             result = resolve_sandbox_runtime_path()
-            
+
             assert result == "/env/path/srt"
 
     def test_resolve_sandbox_runtime_path_from_which(self):
         """Test resolving srt path from PATH."""
         with patch("shutil.which", return_value="/usr/local/bin/srt"):
             result = resolve_sandbox_runtime_path()
-            
+
             assert result == "/usr/local/bin/srt"
 
     def test_resolve_sandbox_runtime_path_not_found(self):
         """Test error when srt cannot be found."""
         with patch("shutil.which", return_value=None):
             with patch.dict(os.environ, {}, clear=True):
-                with pytest.raises(RuntimeError, match="Could not find sandbox-runtime"):
+                with pytest.raises(
+                    RuntimeError, match="Could not find sandbox-runtime"
+                ):
                     resolve_sandbox_runtime_path()
 
     def test_build_sandbox_config_structure(self):
@@ -545,7 +559,9 @@ class TestSandboxRuntime:
         assert "denyWrite" in config["filesystem"]
 
         # Check for required domains and paths
-        assert any("anthropic.com" in domain for domain in config["network"]["allowedDomains"])
+        assert any(
+            "anthropic.com" in domain for domain in config["network"]["allowedDomains"]
+        )
         assert "/tmp" in config["filesystem"]["allowWrite"]
 
     def test_wrap_command_with_sandbox_basic(self):
@@ -557,7 +573,9 @@ class TestSandboxRuntime:
             with patch("os.fdopen", mock_open()):
                 with patch("os.makedirs"):
                     with patch("shutil.copy2"):  # Mock file copy operations
-                        wrapped_cmd, env, config_path = wrap_command_with_sandbox(cmd, settings)
+                        wrapped_cmd, env, config_path = wrap_command_with_sandbox(
+                            cmd, settings
+                        )
 
         assert wrapped_cmd[0] == "/usr/bin/srt"
         assert "--settings" in wrapped_cmd
@@ -577,12 +595,12 @@ class TestSandboxRuntime:
                 with patch("os.makedirs"):
                     with patch("shutil.copy2"):  # Mock file copy operations
                         wrapped_cmd, _, _ = wrap_command_with_sandbox(cmd, settings)
-        
+
         # Find the position of "--" separator
         separator_idx = wrapped_cmd.index("--")
-        
+
         # Everything after "--" should be the original command
-        original_part = wrapped_cmd[separator_idx + 1:]
+        original_part = wrapped_cmd[separator_idx + 1 :]
         assert original_part == cmd
 
     def test_wrap_command_with_sandbox_copies_credentials(self, tmp_path):
@@ -598,17 +616,27 @@ class TestSandboxRuntime:
 
         with patch("tempfile.mkstemp", return_value=(99, "/tmp/config.json")):
             with patch("os.fdopen", mock_open()):
-                with patch("pydantic_ai_claude_code.core.sandbox_runtime.Path.home", return_value=tmp_path / "home"):
-                    with patch("tempfile.mkdtemp", return_value="/tmp/claude_sandbox_config_test"):
+                with patch(
+                    "pydantic_ai_claude_code.core.sandbox_runtime.Path.home",
+                    return_value=tmp_path / "home",
+                ):
+                    with patch(
+                        "tempfile.mkdtemp",
+                        return_value="/tmp/claude_sandbox_config_test",
+                    ):
                         with patch("os.chmod"):
                             with patch("shutil.copy2") as mock_copy:
-                                wrapped_cmd, env, config_path = wrap_command_with_sandbox(cmd, settings)
+                                wrapped_cmd, env, config_path = (
+                                    wrap_command_with_sandbox(cmd, settings)
+                                )
 
                                 # Should have attempted to copy credentials
                                 assert mock_copy.called
                                 # Verify environment variables are set
                                 assert env["IS_SANDBOX"] == "1"
                                 assert "CLAUDE_CONFIG_DIR" in env
-                                assert "claude_sandbox_config_" in env["CLAUDE_CONFIG_DIR"]
+                                assert (
+                                    "claude_sandbox_config_" in env["CLAUDE_CONFIG_DIR"]
+                                )
                                 # Verify config path is returned
                                 assert config_path == "/tmp/config.json"

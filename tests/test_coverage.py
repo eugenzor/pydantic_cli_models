@@ -13,7 +13,6 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
-
 from pydantic_ai.messages import (
     ModelRequest,
     TextPart,
@@ -21,17 +20,16 @@ from pydantic_ai.messages import (
     UserPromptPart,
 )
 from pydantic_ai.models import ModelRequestParameters
-from pydantic_ai.usage import RequestUsage
 
 from pydantic_ai_claude_code.exceptions import ClaudeOAuthError
 from pydantic_ai_claude_code.model import ClaudeCodeModel
+from pydantic_ai_claude_code.streamed_response import ClaudeCodeStreamedResponse
 from pydantic_ai_claude_code.streaming import (
     _extract_from_assistant,
     _extract_from_content_block_delta,
     _extract_from_result,
     extract_text_from_stream_event,
 )
-from pydantic_ai_claude_code.streamed_response import ClaudeCodeStreamedResponse
 from pydantic_ai_claude_code.types import ClaudeCodeSettings, ClaudeJSONResponse
 from pydantic_ai_claude_code.utils import (
     _check_rate_limit,
@@ -55,7 +53,6 @@ from pydantic_ai_claude_code.utils import (
     resolve_sandbox_runtime_path,
     strip_markdown_code_fence,
 )
-
 
 # ===== Tests for utils.py =====
 
@@ -518,10 +515,14 @@ class TestBuildClaudeCommandSandbox:
 
             with (
                 mock.patch("shutil.which") as mock_which,
-                mock.patch("pydantic_ai_claude_code.utils.Path.home", return_value=fake_home),
+                mock.patch(
+                    "pydantic_ai_claude_code.utils.Path.home", return_value=fake_home
+                ),
             ):
                 # Setup mocks
-                mock_which.side_effect = lambda x: f"/usr/bin/{x}" if x in ("claude", "srt") else None
+                mock_which.side_effect = (
+                    lambda x: f"/usr/bin/{x}" if x in ("claude", "srt") else None
+                )
 
                 cmd = build_claude_command(settings=settings)
 
@@ -636,6 +637,7 @@ class TestClaudeCodeStreamedResponse:
     @pytest.mark.asyncio
     async def test_properties(self):
         """Test basic properties."""
+
         async def empty_stream():
             return
             yield  # Make it an async generator
@@ -657,6 +659,7 @@ class TestClaudeCodeStreamedResponse:
     @pytest.mark.asyncio
     async def test_handle_assistant_event_first_chunk(self):
         """Test handling first assistant event chunk."""
+
         async def empty_stream():
             return
             yield
@@ -685,6 +688,7 @@ class TestClaudeCodeStreamedResponse:
     @pytest.mark.asyncio
     async def test_handle_assistant_event_delta(self):
         """Test handling subsequent assistant event with delta."""
+
         async def empty_stream():
             return
             yield
@@ -712,6 +716,7 @@ class TestClaudeCodeStreamedResponse:
     @pytest.mark.asyncio
     async def test_handle_result_event(self):
         """Test handling result event."""
+
         async def empty_stream():
             return
             yield
@@ -743,6 +748,7 @@ class TestClaudeCodeStreamedResponse:
     @pytest.mark.asyncio
     async def test_process_marker_and_text_find_marker(self):
         """Test processing text with marker detection."""
+
         async def empty_stream():
             return
             yield
@@ -767,6 +773,7 @@ class TestClaudeCodeStreamedResponse:
     @pytest.mark.asyncio
     async def test_process_marker_and_text_after_started(self):
         """Test processing text after streaming started."""
+
         async def empty_stream():
             return
             yield
@@ -791,6 +798,7 @@ class TestClaudeCodeStreamedResponse:
     @pytest.mark.asyncio
     async def test_handle_assistant_event_no_content(self):
         """Test handling assistant event with no content."""
+
         async def empty_stream():
             return
             yield
@@ -889,19 +897,21 @@ class TestClaudeCodeModelCheckToolResults:
     def test_no_tool_results(self):
         """Test detection of no tool results."""
         model = ClaudeCodeModel("sonnet")
-        messages = [
-            ModelRequest(parts=[UserPromptPart(content="Hello")])
-        ]
+        messages = [ModelRequest(parts=[UserPromptPart(content="Hello")])]
         assert model._check_has_tool_results(messages) is False
 
     def test_has_tool_results(self):
         """Test detection of tool results."""
         model = ClaudeCodeModel("sonnet")
         messages = [
-            ModelRequest(parts=[
-                UserPromptPart(content="Hello"),
-                ToolReturnPart(tool_name="test", content="result", tool_call_id="123"),
-            ])
+            ModelRequest(
+                parts=[
+                    UserPromptPart(content="Hello"),
+                    ToolReturnPart(
+                        tool_name="test", content="result", tool_call_id="123"
+                    ),
+                ]
+            )
         ]
         assert model._check_has_tool_results(messages) is True
 
@@ -967,7 +977,10 @@ class TestClaudeCodeModelJsonExtraction:
         """Test extraction failure raises JSONDecodeError."""
         model = ClaudeCodeModel("sonnet")
         text = "not valid json or value"
-        schema = {"type": "object", "properties": {"a": {"type": "string"}, "b": {"type": "string"}}}
+        schema = {
+            "type": "object",
+            "properties": {"a": {"type": "string"}, "b": {"type": "string"}},
+        }
 
         with pytest.raises(json.JSONDecodeError):
             model._extract_json_robust(text, schema)
@@ -1256,7 +1269,9 @@ class TestHandleFunctionSelectionResponse:
         }
 
         result_text = "CHOICE: get_weather"
-        result = model._handle_function_selection_response(result_text, response, settings)
+        result = model._handle_function_selection_response(
+            result_text, response, settings
+        )
 
         assert settings["__selected_function__"] == "get_weather"
 
@@ -1269,7 +1284,9 @@ class TestHandleFunctionSelectionResponse:
         }
 
         result_text = "CHOICE: none"
-        result = model._handle_function_selection_response(result_text, response, settings)
+        result = model._handle_function_selection_response(
+            result_text, response, settings
+        )
 
         assert settings["__function_selection_result__"] == "none"
 
@@ -1282,7 +1299,9 @@ class TestHandleFunctionSelectionResponse:
         }
 
         result_text = "CHOICE: **get_weather**"
-        result = model._handle_function_selection_response(result_text, response, settings)
+        result = model._handle_function_selection_response(
+            result_text, response, settings
+        )
 
         assert settings["__selected_function__"] == "get_weather"
 
@@ -1455,7 +1474,9 @@ class TestTrySyncExecutionWithRetry:
 
     def test_success_on_first_try(self):
         """Test successful execution on first try."""
-        from pydantic_ai_claude_code.utils import _try_sync_execution_with_rate_limit_retry
+        from pydantic_ai_claude_code.utils import (
+            _try_sync_execution_with_rate_limit_retry,
+        )
 
         with mock.patch("subprocess.run") as mock_run:
             mock_run.return_value = mock.MagicMock(
@@ -1478,7 +1499,9 @@ class TestTrySyncExecutionWithRetry:
 
     def test_infrastructure_failure_returns_retry(self):
         """Test infrastructure failure returns retry flag."""
-        from pydantic_ai_claude_code.utils import _try_sync_execution_with_rate_limit_retry
+        from pydantic_ai_claude_code.utils import (
+            _try_sync_execution_with_rate_limit_retry,
+        )
 
         with mock.patch("subprocess.run") as mock_run:
             mock_run.return_value = mock.MagicMock(
@@ -1500,7 +1523,9 @@ class TestTrySyncExecutionWithRetry:
 
     def test_rate_limit_retry_with_mocked_sleep(self):
         """Test rate limit triggers retry after sleep."""
-        from pydantic_ai_claude_code.utils import _try_sync_execution_with_rate_limit_retry
+        from pydantic_ai_claude_code.utils import (
+            _try_sync_execution_with_rate_limit_retry,
+        )
 
         call_count = 0
 
@@ -1522,7 +1547,9 @@ class TestTrySyncExecutionWithRetry:
         with (
             mock.patch("subprocess.run", side_effect=mock_run_side_effect),
             mock.patch("time.sleep") as mock_sleep,
-            mock.patch("pydantic_ai_claude_code.utils.calculate_wait_time", return_value=1),
+            mock.patch(
+                "pydantic_ai_claude_code.utils.calculate_wait_time", return_value=1
+            ),
         ):
             response, should_retry = _try_sync_execution_with_rate_limit_retry(
                 cmd=["claude"],
@@ -1725,14 +1752,13 @@ class TestExecuteAsyncCommand:
         with mock.patch(
             "pydantic_ai_claude_code.utils.create_subprocess_async",
             return_value=mock_process,
-        ):
-            with pytest.raises(RuntimeError, match="timeout"):
-                await _execute_async_command(
-                    cmd=["claude"],
-                    cwd="/tmp",
-                    timeout_seconds=1,
-                    settings=None,
-                )
+        ), pytest.raises(RuntimeError, match="timeout"):
+            await _execute_async_command(
+                cmd=["claude"],
+                cwd="/tmp",
+                timeout_seconds=1,
+                settings=None,
+            )
 
 
 class TestTryAsyncExecutionWithRetry:
@@ -1741,7 +1767,9 @@ class TestTryAsyncExecutionWithRetry:
     @pytest.mark.asyncio
     async def test_async_success_on_first_try(self):
         """Test successful async execution on first try."""
-        from pydantic_ai_claude_code.utils import _try_async_execution_with_rate_limit_retry
+        from pydantic_ai_claude_code.utils import (
+            _try_async_execution_with_rate_limit_retry,
+        )
 
         mock_process = mock.AsyncMock()
         mock_process.communicate = mock.AsyncMock(
@@ -1768,7 +1796,9 @@ class TestTryAsyncExecutionWithRetry:
     @pytest.mark.asyncio
     async def test_async_infrastructure_failure_returns_retry(self):
         """Test async infrastructure failure returns retry flag."""
-        from pydantic_ai_claude_code.utils import _try_async_execution_with_rate_limit_retry
+        from pydantic_ai_claude_code.utils import (
+            _try_async_execution_with_rate_limit_retry,
+        )
 
         mock_process = mock.AsyncMock()
         mock_process.communicate = mock.AsyncMock(
@@ -1919,7 +1949,9 @@ class TestRunClaudeStreaming:
             return_value=mock_process,
         ):
             events = []
-            async for event in run_claude_streaming(["claude", "--streaming"], cwd="/tmp"):
+            async for event in run_claude_streaming(
+                ["claude", "--streaming"], cwd="/tmp"
+            ):
                 events.append(event)
 
             assert len(events) == 3
@@ -2009,10 +2041,9 @@ class TestRunClaudeStreaming:
         with mock.patch(
             "pydantic_ai_claude_code.streaming.create_subprocess_async",
             return_value=mock_process,
-        ):
-            with pytest.raises(RuntimeError, match="Process failed"):
-                async for event in run_claude_streaming(["claude"], cwd="/tmp"):
-                    pass
+        ), pytest.raises(RuntimeError, match="Process failed"):
+            async for event in run_claude_streaming(["claude"], cwd="/tmp"):
+                pass
 
 
 # ===== Tests for streamed_response.py background consumption =====
@@ -2024,9 +2055,18 @@ class TestStreamedResponseBackgroundConsumption:
     @pytest.mark.asyncio
     async def test_consume_stream_with_content_block_delta(self):
         """Test consuming stream with content_block_delta events."""
+
         async def mock_stream():
-            yield {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "Hello"}}
-            yield {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": " World"}}
+            yield {
+                "type": "content_block_delta",
+                "index": 0,
+                "delta": {"type": "text_delta", "text": "Hello"},
+            }
+            yield {
+                "type": "content_block_delta",
+                "index": 0,
+                "delta": {"type": "text_delta", "text": " World"},
+            }
             yield {"type": "result", "usage": {"input_tokens": 10, "output_tokens": 5}}
 
         response = ClaudeCodeStreamedResponse(
@@ -2046,8 +2086,16 @@ class TestStreamedResponseBackgroundConsumption:
     @pytest.mark.asyncio
     async def test_consume_stream_with_marker(self):
         """Test consuming stream with streaming marker."""
+
         async def mock_stream():
-            yield {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "prefix<<<MARKER>>>actual content"}}
+            yield {
+                "type": "content_block_delta",
+                "index": 0,
+                "delta": {
+                    "type": "text_delta",
+                    "text": "prefix<<<MARKER>>>actual content",
+                },
+            }
             yield {"type": "result", "usage": {"input_tokens": 10, "output_tokens": 5}}
 
         response = ClaudeCodeStreamedResponse(
@@ -2066,9 +2114,14 @@ class TestStreamedResponseBackgroundConsumption:
     @pytest.mark.asyncio
     async def test_consume_stream_skips_message_start(self):
         """Test consuming stream skips message_start events."""
+
         async def mock_stream():
             yield {"type": "message_start"}
-            yield {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "Text"}}
+            yield {
+                "type": "content_block_delta",
+                "index": 0,
+                "delta": {"type": "text_delta", "text": "Text"},
+            }
             yield {"type": "result", "usage": {"input_tokens": 1, "output_tokens": 1}}
 
         response = ClaudeCodeStreamedResponse(
@@ -2086,9 +2139,18 @@ class TestStreamedResponseBackgroundConsumption:
     @pytest.mark.asyncio
     async def test_consume_stream_skips_other_indices(self):
         """Test consuming stream skips content blocks with index != 0."""
+
         async def mock_stream():
-            yield {"type": "content_block_delta", "index": 1, "delta": {"type": "text_delta", "text": "Ignored"}}
-            yield {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "Used"}}
+            yield {
+                "type": "content_block_delta",
+                "index": 1,
+                "delta": {"type": "text_delta", "text": "Ignored"},
+            }
+            yield {
+                "type": "content_block_delta",
+                "index": 0,
+                "delta": {"type": "text_delta", "text": "Used"},
+            }
             yield {"type": "result", "usage": {"input_tokens": 1, "output_tokens": 1}}
 
         response = ClaudeCodeStreamedResponse(
@@ -2106,8 +2168,13 @@ class TestStreamedResponseBackgroundConsumption:
     @pytest.mark.asyncio
     async def test_get_event_iterator(self):
         """Test _get_event_iterator yields events from buffer."""
+
         async def mock_stream():
-            yield {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "Test"}}
+            yield {
+                "type": "content_block_delta",
+                "index": 0,
+                "delta": {"type": "text_delta", "text": "Test"},
+            }
             yield {"type": "result", "usage": {"input_tokens": 1, "output_tokens": 1}}
 
         response = ClaudeCodeStreamedResponse(

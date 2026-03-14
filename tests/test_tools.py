@@ -97,6 +97,7 @@ def test_agent_tool_with_object_param():
 
     class AppConfig(BaseModel):
         """Application configuration settings."""
+
         theme: str = Field(description="UI theme (light/dark)")
         language: str = Field(description="Language code (e.g., en, fr)")
         notifications: bool = Field(description="Whether notifications are enabled")
@@ -168,7 +169,9 @@ def test_agent_tool_error_handling():
     def process_customer(customer_id: int) -> str:
         """Process customer data from database."""
         if customer_id == ARCHIVED_CUSTOMER_ID:
-            raise ValueError(f"Customer {ARCHIVED_CUSTOMER_ID} is archived and cannot be processed")
+            raise ValueError(
+                f"Customer {ARCHIVED_CUSTOMER_ID} is archived and cannot be processed"
+            )
         return f"Processed customer {customer_id}"
 
     agent = Agent("claude-code:sonnet", tools=[process_customer])
@@ -219,6 +222,7 @@ def test_agent_tool_complex_nested_params():
 
     class UserProfile(BaseModel):
         """User profile information."""
+
         age: int = Field(description="User's age in years")
         city: str = Field(description="City where the user lives")
 
@@ -398,7 +402,7 @@ def test_agent_tool_returns_binary_content():
         """
         # For testing, return a real PNG file
         image_data = test_image.read_bytes()
-        return BinaryContent(data=image_data, media_type='image/png')
+        return BinaryContent(data=image_data, media_type="image/png")
 
     # Use context manager but manually clean up to allow inspection on failure
     tmpdir = tempfile.mkdtemp(prefix="test_binary_tool_")
@@ -408,7 +412,7 @@ def test_agent_tool_returns_binary_content():
 
         result = agent.run_sync(
             "Generate a test image and tell me what you see in it.",
-            model_settings=ClaudeCodeModelSettings(working_directory=tmpdir)
+            model_settings=ClaudeCodeModelSettings(working_directory=tmpdir),
         )
 
         # Verify we got a response
@@ -416,17 +420,16 @@ def test_agent_tool_returns_binary_content():
         assert isinstance(result.output, str)
 
         # Verify Claude actually saw and described the image (Bert from Sesame Street)
-        assert "bert" in result.output.lower(), f"Claude should have identified Bert in the image. Response: {result.output}"
+        assert "bert" in result.output.lower(), (
+            f"Claude should have identified Bert in the image. Response: {result.output}"
+        )
 
         # Verify the tool was called (check message history)
-        tool_called = any(
-            'generate_image' in str(msg)
-            for msg in result.all_messages()
-        )
+        tool_called = any("generate_image" in str(msg) for msg in result.all_messages())
         assert tool_called, "Tool should have been called"
 
         # Find PNG files in working directory (should be in subdirectory 2/)
-        all_png_files = list(Path(tmpdir).rglob('*.png'))
+        all_png_files = list(Path(tmpdir).rglob("*.png"))
         assert len(all_png_files) >= 1, f"PNG file should exist in {tmpdir}"
 
         # Verify the binary data was preserved

@@ -20,7 +20,9 @@ from pydantic_ai_claude_code.messages import (
 
 # Test constants for message counts
 EXPECTED_TOTAL_MESSAGES = 4  # Total messages in full conversation test
-EXPECTED_ASSISTANT_MESSAGES = 2  # Number of assistant messages in full conversation test
+EXPECTED_ASSISTANT_MESSAGES = (
+    2  # Number of assistant messages in full conversation test
+)
 
 
 def test_format_system_prompt():

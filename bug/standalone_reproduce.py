@@ -12,13 +12,16 @@ Run with v0.8.0 to see the bug, v0.7.4 to see it work.
 
 import pathlib
 import tempfile
+
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
+
 from pydantic_ai_claude_code import ClaudeCodeModel, ClaudeCodeProvider
 
 
 class ApplicationField(BaseModel):
     """A single application field."""
+
     name: str = Field(description="Field name")
     description: str = Field(description="Field description")
     content: str = Field(description="Field content from source material")
@@ -27,6 +30,7 @@ class ApplicationField(BaseModel):
 
 class StructuredApplication(BaseModel):
     """Application with multiple fields."""
+
     fields: list[ApplicationField] = Field(description="All application fields")
 
 
@@ -79,7 +83,9 @@ def test_bug():
     """Test that reproduces the v0.8.0 bug."""
 
     # Write source content to temp file
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False, prefix='claude_source_') as f:
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".md", delete=False, prefix="claude_source_"
+    ) as f:
         f.write(SOURCE_CONTENT)
         source_file = pathlib.Path(f.name)
 
@@ -150,17 +156,14 @@ Return a structured application with all fields populated.
         # Prepare model settings with file attachment (using dict, not ClaudeCodeSettings)
         # This is the key part: pass the source file so @source_content.md works
         # Using dict (as our project does) triggers the bug in v0.8.0
-        model_settings = {
-            "additional_files": {
-                "source_content.md": source_file
-            }
-        }
+        model_settings = {"additional_files": {"source_content.md": source_file}}
 
         # Run
         print("=" * 80)
         print("Testing pydantic-ai-claude-code...")
         try:
             import pydantic_ai_claude_code
+
             print(f"Version: {pydantic_ai_claude_code.__version__}")
         except:
             print("Version: unknown")
@@ -201,8 +204,12 @@ Return a structured application with all fields populated.
             print("\nThis is the v0.8.0 bug.")
             return 1
         elif empty_count > 0:
-            print(f"⚠️  {empty_count} optional fields empty (expected if no content in source)")
-            print(f"   All {len(application.fields) - empty_count} required fields populated")
+            print(
+                f"⚠️  {empty_count} optional fields empty (expected if no content in source)"
+            )
+            print(
+                f"   All {len(application.fields) - empty_count} required fields populated"
+            )
             print("\nWorking correctly (v0.7.4 behavior)")
             return 0
         else:

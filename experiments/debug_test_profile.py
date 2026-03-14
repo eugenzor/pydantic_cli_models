@@ -13,13 +13,16 @@ import pydantic_ai_claude_code  # noqa: F401 - Register provider
 # Enable logging
 logging.basicConfig(level=logging.INFO)
 
+
 class Address(BaseModel):
     age: int
     city: str
 
+
 def create_user(username: str, email: str, profile: Address) -> str:
     """Create a new user with username, email, and profile containing age and city."""
     return f"User created: {username} ({email}) - Profile: age={profile.age}, city={profile.city}"
+
 
 async def main() -> None:
     agent = Agent(
@@ -34,9 +37,9 @@ async def main() -> None:
         "Create a user with username john_doe, email john@example.com, profile age=30, city=London"
     )
 
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"Result: {result.output}")
-    print(f"{'='*80}\n")
+    print(f"{'=' * 80}\n")
 
     # Check all temp directories
     print("Checking for temp directories...")
@@ -56,6 +59,7 @@ async def main() -> None:
                 print(f"  FILE: {rel_path} -> {content!r}")
             else:
                 print(f"  DIR:  {rel_path}/")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

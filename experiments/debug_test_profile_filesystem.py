@@ -14,16 +14,14 @@ class Address(BaseModel):
     age: int
     city: str
 
+
 # Simulate Phase 2 argument collection
 def test_filesystem_creation() -> Path:
     # Create schema for profile parameter
     schema = {
         "type": "object",
-        "properties": {
-            "age": {"type": "integer"},
-            "city": {"type": "string"}
-        },
-        "required": ["age", "city"]
+        "properties": {"age": {"type": "integer"}, "city": {"type": "string"}},
+        "required": ["age", "city"],
     }
 
     # Create temp directory that won't be auto-cleaned
@@ -38,11 +36,11 @@ def test_filesystem_creation() -> Path:
         temp_dir=str(temp_dir),
     )
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("INSTRUCTIONS FOR CLAUDE:")
-    print("="*80)
+    print("=" * 80)
     print(instructions)
-    print("="*80)
+    print("=" * 80)
 
     # Simulate what Claude should create based on the request:
     # "profile age=30, city=London"
@@ -71,13 +69,14 @@ def test_filesystem_creation() -> Path:
 
     return temp_dir
 
+
 if __name__ == "__main__":
     temp_dir = test_filesystem_creation()
 
     # Now test reading it back
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TESTING READ BACK:")
-    print("="*80)
+    print("=" * 80)
 
     from pydantic_ai_claude_code.structure_converter import (
         read_structure_from_filesystem,
@@ -86,11 +85,8 @@ if __name__ == "__main__":
     result = read_structure_from_filesystem(
         schema={
             "type": "object",
-            "properties": {
-                "age": {"type": "integer"},
-                "city": {"type": "string"}
-            },
-            "required": ["age", "city"]
+            "properties": {"age": {"type": "integer"}, "city": {"type": "string"}},
+            "required": ["age", "city"],
         },
         base_path=temp_dir,
     )

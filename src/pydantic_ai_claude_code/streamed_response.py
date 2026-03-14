@@ -112,7 +112,9 @@ class ClaudeCodeStreamedResponse(StreamedResponse):
                 if delta:
                     logger.debug("Streaming text delta: %d chars", len(delta))
                     return (
-                        PartDeltaEvent(index=0, delta=TextPartDelta(content_delta=delta)),
+                        PartDeltaEvent(
+                            index=0, delta=TextPartDelta(content_delta=delta)
+                        ),
                         text_started,
                         text,
                     )
@@ -148,7 +150,11 @@ class ClaudeCodeStreamedResponse(StreamedResponse):
         return FinalResultEvent(tool_name=None, tool_call_id=None)
 
     def _process_marker_and_text(
-        self, text_chunk: str, accumulated_text: str, streaming_started: bool, text_started: bool
+        self,
+        text_chunk: str,
+        accumulated_text: str,
+        streaming_started: bool,
+        text_started: bool,
     ) -> tuple[str, bool, bool]:
         """Process text chunk with marker detection.
 
@@ -222,7 +228,9 @@ class ClaudeCodeStreamedResponse(StreamedResponse):
                         continue
 
                     delta = event.get("delta", {})
-                    if not (isinstance(delta, dict) and delta.get("type") == "text_delta"):
+                    if not (
+                        isinstance(delta, dict) and delta.get("type") == "text_delta"
+                    ):
                         continue
 
                     text_chunk = delta.get("text", "")
@@ -230,8 +238,13 @@ class ClaudeCodeStreamedResponse(StreamedResponse):
                         continue
 
                     # Process text with marker detection
-                    accumulated_text, streaming_started, text_started = self._process_marker_and_text(
-                        text_chunk, accumulated_text, streaming_started, text_started
+                    accumulated_text, streaming_started, text_started = (
+                        self._process_marker_and_text(
+                            text_chunk,
+                            accumulated_text,
+                            streaming_started,
+                            text_started,
+                        )
                     )
 
                 elif event_type in ("message_delta", "message_stop", "assistant"):
@@ -241,7 +254,10 @@ class ClaudeCodeStreamedResponse(StreamedResponse):
                     result_event = self._handle_result_event(event, event_count)
                     self._buffered_events.append(result_event)
 
-            logger.debug("Background stream consumption complete, buffered %d events", len(self._buffered_events))
+            logger.debug(
+                "Background stream consumption complete, buffered %d events",
+                len(self._buffered_events),
+            )
         finally:
             # Signal that stream is complete
             self._stream_complete.set()

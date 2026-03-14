@@ -4,7 +4,6 @@ import shutil
 
 import pytest
 
-from pydantic_ai_claude_code import ClaudeCodeProvider
 from pydantic_ai_claude_code.utils import (
     build_claude_command,
     resolve_sandbox_runtime_path,
@@ -118,7 +117,10 @@ def test_sandbox_defaults_in_build_command():
     cmd = build_claude_command(settings=settings, output_format="json")
 
     # Default behavior: no sandbox wrapping (user must explicitly enable)
-    assert "__sandbox_env" not in settings or settings.get("use_sandbox_runtime") is not True
+    assert (
+        "__sandbox_env" not in settings
+        or settings.get("use_sandbox_runtime") is not True
+    )
 
 
 @pytest.mark.skipif(not shutil.which("srt"), reason="sandbox-runtime not installed")

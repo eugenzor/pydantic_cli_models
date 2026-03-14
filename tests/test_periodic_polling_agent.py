@@ -142,9 +142,7 @@ def create_notifier_agent() -> Agent[None, Notification]:
 def make_worker_model(task_store: TaskStore):
     """Create a FunctionModel that simulates worker behavior."""
 
-    def worker_fn(
-        messages: list[ModelMessage], info: AgentInfo
-    ) -> ModelResponse:
+    def worker_fn(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         task_store.advance(25)
         return ModelResponse(
             parts=[
@@ -161,9 +159,7 @@ def make_worker_model(task_store: TaskStore):
 def make_monitor_model(task_store: TaskStore):
     """Create a FunctionModel that simulates monitor polling behavior."""
 
-    def monitor_fn(
-        messages: list[ModelMessage], info: AgentInfo
-    ) -> ModelResponse:
+    def monitor_fn(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         task_store.poll_count += 1
         return ModelResponse(
             parts=[
@@ -186,9 +182,7 @@ def make_monitor_model(task_store: TaskStore):
 def make_notifier_model(task_store: TaskStore):
     """Create a FunctionModel that simulates notifier behavior."""
 
-    def notifier_fn(
-        messages: list[ModelMessage], info: AgentInfo
-    ) -> ModelResponse:
+    def notifier_fn(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         ts = datetime.now(timezone.utc).isoformat()
         notification_data = {
             "recipient": "user@example.com",
@@ -362,9 +356,7 @@ class TestMultiAgentAutoMessaging:
                 all_statuses.append(status_result.output)
 
                 # 3. Notifier sends auto-message
-                notify_result = await notifier.run(
-                    f"Notify about cycle {cycle}"
-                )
+                notify_result = await notifier.run(f"Notify about cycle {cycle}")
                 all_notifications.append(notify_result.output)
 
                 if status_result.output.status == TaskStatus.COMPLETED:
@@ -476,9 +468,7 @@ class TestPollingWithTimeSimulation:
                 notify_result = await notifier.run(
                     f"Auto-message for minute {simulated_minute}"
                 )
-                cycle_record["notification_subject"] = (
-                    notify_result.output.subject
-                )
+                cycle_record["notification_subject"] = notify_result.output.subject
                 cycle_record["notification_body"] = notify_result.output.body
 
                 minute_log.append(cycle_record)
@@ -593,12 +583,8 @@ class TestAgentDelegation:
             notifier.override(model=make_notifier_model(store)),
         ):
             # Run monitor and notifier concurrently
-            status_task = asyncio.create_task(
-                monitor.run("Concurrent poll")
-            )
-            notify_task = asyncio.create_task(
-                notifier.run("Concurrent notify")
-            )
+            status_task = asyncio.create_task(monitor.run("Concurrent poll"))
+            notify_task = asyncio.create_task(notifier.run("Concurrent notify"))
 
             status_result, notify_result = await asyncio.gather(
                 status_task, notify_task
@@ -629,21 +615,15 @@ class TestAgentDelegation:
             while store.status != TaskStatus.COMPLETED:
                 # Phase 1: Worker does work
                 await worker.run("Process next step")
-                lifecycle_events.append(
-                    f"work:{store.progress_pct}%"
-                )
+                lifecycle_events.append(f"work:{store.progress_pct}%")
 
                 # Phase 2: Monitor checks
                 status = await monitor.run("Check progress")
-                lifecycle_events.append(
-                    f"poll:{status.output.status.value}"
-                )
+                lifecycle_events.append(f"poll:{status.output.status.value}")
 
                 # Phase 3: Notifier auto-messages
                 notification = await notifier.run("Auto-notify")
-                lifecycle_events.append(
-                    f"notify:{notification.output.subject}"
-                )
+                lifecycle_events.append(f"notify:{notification.output.subject}")
 
                 # Safety valve
                 if len(lifecycle_events) > 30:

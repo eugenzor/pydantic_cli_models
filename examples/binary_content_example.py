@@ -21,16 +21,16 @@ def main() -> None:
 
     # Create a simple test image (1x1 PNG)
     png_data = (
-        b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01'
-        b'\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01'
-        b'\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
+        b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
     )
 
     # Use standard Pydantic AI BinaryContent interface
     result = agent.run_sync(
         [
-            'Describe this image and tell me what you see.',
-            BinaryContent(data=png_data, media_type='image/png'),
+            "Describe this image and tell me what you see.",
+            BinaryContent(data=png_data, media_type="image/png"),
         ]
     )
     print(f"Response: {result.output}\n")
@@ -45,11 +45,13 @@ def main() -> None:
 
     result = agent.run_sync(
         [
-            'Compare these two images:',
-            BinaryContent(data=image1_data, media_type='image/png', identifier='first'),
-            'versus',
-            BinaryContent(data=image2_data, media_type='image/jpeg', identifier='second'),
-            '. What are the differences?',
+            "Compare these two images:",
+            BinaryContent(data=image1_data, media_type="image/png", identifier="first"),
+            "versus",
+            BinaryContent(
+                data=image2_data, media_type="image/jpeg", identifier="second"
+            ),
+            ". What are the differences?",
         ]
     )
     print(f"Response: {result.output}\n")
@@ -59,7 +61,7 @@ def main() -> None:
     print("=" * 80)
 
     # Create a minimal PDF
-    pdf_data = b'''%PDF-1.4
+    pdf_data = b"""%PDF-1.4
 1 0 obj
 <<
 /Type /Catalog
@@ -116,12 +118,12 @@ trailer
 >>
 startxref
 407
-%%EOF'''
+%%EOF"""
 
     result = agent.run_sync(
         [
-            'What does this PDF document say?',
-            BinaryContent(data=pdf_data, media_type='application/pdf'),
+            "What does this PDF document say?",
+            BinaryContent(data=pdf_data, media_type="application/pdf"),
         ]
     )
     print(f"Response: {result.output}\n")
@@ -133,7 +135,7 @@ startxref
     # For demonstration, create a temporary file
     import tempfile
 
-    with tempfile.NamedTemporaryFile(suffix='.txt', delete=False, mode='w') as f:
+    with tempfile.NamedTemporaryFile(suffix=".txt", delete=False, mode="w") as f:
         f.write("This is a test document with some sample content.\n")
         f.write("It contains multiple lines.\n")
         f.write("You can analyze this content.\n")
@@ -144,8 +146,8 @@ startxref
         file_data = temp_path.read_bytes()
         result = agent.run_sync(
             [
-                'Summarize this text file:',
-                BinaryContent(data=file_data, media_type='text/plain'),
+                "Summarize this text file:",
+                BinaryContent(data=file_data, media_type="text/plain"),
             ]
         )
         print(f"Response: {result.output}\n")

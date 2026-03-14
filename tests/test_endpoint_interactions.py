@@ -179,9 +179,7 @@ class TestAgentOverrideWithTestModel:
         # TestModel will produce schema-conforming output
         assert isinstance(result.output, CityInfo)
 
-    async def test_override_does_not_affect_other_agents(
-        self, test_model: TestModel
-    ):
+    async def test_override_does_not_affect_other_agents(self, test_model: TestModel):
         """Verify override is scoped to the context manager."""
         agent1 = Agent("claude-code:sonnet")
         agent2 = Agent("claude-code:sonnet")
@@ -205,9 +203,7 @@ class TestFunctionModelInteraction:
     async def test_function_model_returns_text(self):
         """Verify FunctionModel can return plain text responses."""
 
-        def mock_claude(
-            messages: list[ModelMessage], info: AgentInfo
-        ) -> ModelResponse:
+        def mock_claude(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
             return ModelResponse(parts=[TextPart("Hello from mock Claude!")])
 
         agent = Agent("claude-code:sonnet")
@@ -221,9 +217,7 @@ class TestFunctionModelInteraction:
         """Verify FunctionModel receives the full message history."""
         captured_messages: list[list[ModelMessage]] = []
 
-        def mock_claude(
-            messages: list[ModelMessage], info: AgentInfo
-        ) -> ModelResponse:
+        def mock_claude(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
             captured_messages.append(messages)
             return ModelResponse(parts=[TextPart("OK")])
 
@@ -246,9 +240,7 @@ class TestFunctionModelInteraction:
             call_count += 1
             return x * 2
 
-        def mock_claude(
-            messages: list[ModelMessage], info: AgentInfo
-        ) -> ModelResponse:
+        def mock_claude(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
             # First call: invoke the tool
             if len(messages) == 1:
                 return ModelResponse(
@@ -261,9 +253,7 @@ class TestFunctionModelInteraction:
                     ]
                 )
             # Second call: return the final text
-            return ModelResponse(
-                parts=[TextPart("The result is 10")]
-            )
+            return ModelResponse(parts=[TextPart("The result is 10")])
 
         agent = Agent("claude-code:sonnet", tools=[my_tool])
 
@@ -280,9 +270,7 @@ class TestFunctionModelInteraction:
             result: int
             explanation: str
 
-        def mock_claude(
-            messages: list[ModelMessage], info: AgentInfo
-        ) -> ModelResponse:
+        def mock_claude(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
             return ModelResponse(
                 parts=[
                     ToolCallPart(
@@ -309,14 +297,10 @@ class TestFunctionModelInteraction:
         """Verify FunctionModel handles multi-turn conversations."""
         turn_count = 0
 
-        def mock_claude(
-            messages: list[ModelMessage], info: AgentInfo
-        ) -> ModelResponse:
+        def mock_claude(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
             nonlocal turn_count
             turn_count += 1
-            return ModelResponse(
-                parts=[TextPart(f"Response turn {turn_count}")]
-            )
+            return ModelResponse(parts=[TextPart(f"Response turn {turn_count}")])
 
         agent = Agent("claude-code:sonnet")
 
@@ -342,18 +326,14 @@ class TestCaptureRunMessages:
         """Verify capture_run_messages captures the full exchange."""
         agent = Agent("claude-code:sonnet")
 
-        with capture_run_messages() as messages, agent.override(
-            model=test_model
-        ):
+        with capture_run_messages() as messages, agent.override(model=test_model):
             await agent.run("Hello")
 
         assert len(messages) >= EXPECTED_MIN_MESSAGES
         # First message should be a request containing the user prompt
         first_msg = messages[0]
         assert isinstance(first_msg, ModelRequest)
-        has_user_prompt = any(
-            isinstance(p, UserPromptPart) for p in first_msg.parts
-        )
+        has_user_prompt = any(isinstance(p, UserPromptPart) for p in first_msg.parts)
         assert has_user_prompt
 
     async def test_capture_with_tool_calls(self, test_model: TestModel):
@@ -365,9 +345,7 @@ class TestCaptureRunMessages:
 
         agent = Agent("claude-code:sonnet", tools=[greet])
 
-        with capture_run_messages() as messages, agent.override(
-            model=test_model
-        ):
+        with capture_run_messages() as messages, agent.override(model=test_model):
             await agent.run("Greet Alice")
 
         # Should capture the tool call and tool return messages
@@ -392,9 +370,7 @@ class TestCaptureRunMessages:
             system_prompt="You are a helpful bot.",
         )
 
-        with capture_run_messages() as messages, agent.override(
-            model=test_model
-        ):
+        with capture_run_messages() as messages, agent.override(model=test_model):
             await agent.run("Hi")
 
         has_system = any(
@@ -417,9 +393,7 @@ class TestClaudeCodeModelInternals:
 
     def test_model_name_with_preset(self):
         """Verify model_name format with provider preset."""
-        model = ClaudeCodeModel(
-            model_name="sonnet", provider_preset="deepseek"
-        )
+        model = ClaudeCodeModel(model_name="sonnet", provider_preset="deepseek")
         assert model.model_name == "claude-code:deepseek:sonnet"
 
     def test_system_property(self, claude_code_model: ClaudeCodeModel):
@@ -428,9 +402,7 @@ class TestClaudeCodeModelInternals:
 
     def test_build_options_defaults(self, claude_code_model: ClaudeCodeModel):
         """Verify default options are set correctly."""
-        settings = claude_code_model._build_options(
-            None, ModelRequestParameters()
-        )
+        settings = claude_code_model._build_options(None, ModelRequestParameters())
 
         assert settings["model"] == "sonnet"
         assert settings["dangerously_skip_permissions"] is True
@@ -457,9 +429,7 @@ class TestClaudeCodeModelInternals:
         assert settings["timeout_seconds"] == CUSTOM_TIMEOUT
         assert settings["verbose"] is True
 
-    def test_build_options_with_hooks(
-        self, claude_code_model: ClaudeCodeModel
-    ):
+    def test_build_options_with_hooks(self, claude_code_model: ClaudeCodeModel):
         """Verify hooks are passed through model_settings."""
         hooks = [
             {
@@ -475,9 +445,7 @@ class TestClaudeCodeModelInternals:
 
         assert settings.get("__hooks__") == hooks
 
-    def test_check_has_tool_results_empty(
-        self, claude_code_model: ClaudeCodeModel
-    ):
+    def test_check_has_tool_results_empty(self, claude_code_model: ClaudeCodeModel):
         """Verify no tool results in empty messages."""
         messages: list[ModelMessage] = []
         assert claude_code_model._check_has_tool_results(messages) is False
@@ -508,18 +476,14 @@ class TestClaudeCodeModelInternals:
         ]
         assert claude_code_model._check_has_tool_results(messages) is False
 
-    def test_xml_to_markdown_conversion(
-        self, claude_code_model: ClaudeCodeModel
-    ):
+    def test_xml_to_markdown_conversion(self, claude_code_model: ClaudeCodeModel):
         """Verify XML description to markdown conversion."""
         xml = "<summary>Get weather data</summary><returns><description>Temperature in celsius</description></returns>"
         result = claude_code_model._xml_to_markdown(xml)
         assert "Get weather data." in result
         assert "Returns: Temperature in celsius" in result
 
-    def test_xml_to_markdown_plain_text(
-        self, claude_code_model: ClaudeCodeModel
-    ):
+    def test_xml_to_markdown_plain_text(self, claude_code_model: ClaudeCodeModel):
         """Verify plain text passes through unchanged."""
         plain = "Just a plain description"
         result = claude_code_model._xml_to_markdown(plain)
@@ -553,17 +517,13 @@ class TestClaudeCodeModelInternals:
         name = claude_code_model._get_model_name(sample_claude_response)
         assert name == "claude-sonnet-4-20250514"
 
-    def test_get_model_name_fallback(
-        self, claude_code_model: ClaudeCodeModel
-    ):
+    def test_get_model_name_fallback(self, claude_code_model: ClaudeCodeModel):
         """Verify model name fallback when not in response."""
         response = ClaudeJSONResponse()
         name = claude_code_model._get_model_name(response)
         assert name == "sonnet"
 
-    def test_validate_json_schema_valid(
-        self, claude_code_model: ClaudeCodeModel
-    ):
+    def test_validate_json_schema_valid(self, claude_code_model: ClaudeCodeModel):
         """Verify JSON schema validation passes for correct data."""
         schema = {
             "properties": {
@@ -594,9 +554,7 @@ class TestClaudeCodeModelInternals:
         assert error is not None
         assert "age" in error
 
-    def test_validate_json_schema_wrong_type(
-        self, claude_code_model: ClaudeCodeModel
-    ):
+    def test_validate_json_schema_wrong_type(self, claude_code_model: ClaudeCodeModel):
         """Verify validation catches type mismatches."""
         schema = {
             "properties": {"count": {"type": "integer"}},
@@ -655,9 +613,7 @@ class TestClaudeCodeModelInternals:
 class TestResponseConversion:
     """Test _convert_response method paths."""
 
-    def test_convert_plain_text_response(
-        self, claude_code_model: ClaudeCodeModel
-    ):
+    def test_convert_plain_text_response(self, claude_code_model: ClaudeCodeModel):
         """Verify plain text response conversion."""
         response: ClaudeJSONResponse = {
             "result": "Hello, World!",
@@ -673,9 +629,7 @@ class TestResponseConversion:
         assert isinstance(model_response.parts[0], TextPart)
         assert model_response.parts[0].content == "Hello, World!"
 
-    def test_convert_function_selection_none(
-        self, claude_code_model: ClaudeCodeModel
-    ):
+    def test_convert_function_selection_none(self, claude_code_model: ClaudeCodeModel):
         """Verify 'none' function selection is parsed correctly."""
         response: ClaudeJSONResponse = {
             "result": "CHOICE: none",
@@ -921,9 +875,7 @@ class TestResponseUtils:
 
     def test_get_working_directory_from_settings(self):
         """Verify working directory extraction."""
-        settings: ClaudeCodeSettings = {
-            "__working_directory": "/my/custom/dir"
-        }
+        settings: ClaudeCodeSettings = {"__working_directory": "/my/custom/dir"}
         assert get_working_directory(settings) == "/my/custom/dir"
 
     def test_get_working_directory_default(self):
@@ -934,10 +886,7 @@ class TestResponseUtils:
     def test_get_working_directory_custom_default(self):
         """Verify custom default value."""
         settings: ClaudeCodeSettings = {}
-        assert (
-            get_working_directory(settings, default="/custom")
-            == "/custom"
-        )
+        assert get_working_directory(settings, default="/custom") == "/custom"
 
 
 # ===== Section 9: Provider Configuration =====
@@ -1000,10 +949,12 @@ class TestErrorHandlingPaths:
             detect_oauth_error,
         )
 
-        stdout = json.dumps({
-            "is_error": True,
-            "result": "Error: token expired. Please run /login to re-authenticate.",
-        })
+        stdout = json.dumps(
+            {
+                "is_error": True,
+                "result": "Error: token expired. Please run /login to re-authenticate.",
+            }
+        )
         is_oauth, msg = detect_oauth_error(stdout, "")
         assert is_oauth is True
         assert msg is not None
@@ -1048,7 +999,9 @@ class TestErrorHandlingPaths:
         )
 
         # Must match actual patterns: Cannot find module, MODULE_NOT_FOUND, ENOENT, EACCES
-        assert detect_cli_infrastructure_failure("Cannot find module 'yoga.wasm'") is True
+        assert (
+            detect_cli_infrastructure_failure("Cannot find module 'yoga.wasm'") is True
+        )
         assert detect_cli_infrastructure_failure("MODULE_NOT_FOUND") is True
         assert detect_cli_infrastructure_failure("ENOENT: no such file") is True
         assert detect_cli_infrastructure_failure("EACCES: permission denied") is True
@@ -1079,24 +1032,18 @@ class TestSettingsMerge:
 
     def test_defaults_layer(self, claude_code_model: ClaudeCodeModel):
         """Verify default settings are the base layer."""
-        settings = claude_code_model._build_options(
-            None, ModelRequestParameters()
-        )
+        settings = claude_code_model._build_options(None, ModelRequestParameters())
         assert settings["model"] == "sonnet"
         assert settings["dangerously_skip_permissions"] is True
 
-    def test_model_settings_override_defaults(
-        self, claude_code_model: ClaudeCodeModel
-    ):
+    def test_model_settings_override_defaults(self, claude_code_model: ClaudeCodeModel):
         """Verify model_settings overrides defaults."""
         settings = claude_code_model._build_options(
             {"timeout_seconds": 60}, ModelRequestParameters()
         )
         assert settings["timeout_seconds"] == 60
 
-    def test_extra_cli_args_passthrough(
-        self, claude_code_model: ClaudeCodeModel
-    ):
+    def test_extra_cli_args_passthrough(self, claude_code_model: ClaudeCodeModel):
         """Verify extra CLI args are passed through."""
         settings = claude_code_model._build_options(
             {"extra_cli_args": ["--no-color"]},
@@ -1104,9 +1051,7 @@ class TestSettingsMerge:
         )
         assert settings["extra_cli_args"] == ["--no-color"]
 
-    def test_debug_save_prompts_setting(
-        self, claude_code_model: ClaudeCodeModel
-    ):
+    def test_debug_save_prompts_setting(self, claude_code_model: ClaudeCodeModel):
         """Verify debug_save_prompts is passed through."""
         settings = claude_code_model._build_options(
             {"debug_save_prompts": "/debug/output"},
@@ -1121,13 +1066,9 @@ class TestSettingsMerge:
 class TestStructuredOutputFileHandling:
     """Test structured output file read/write paths."""
 
-    def test_read_structured_output_json_file(
-        self, claude_code_model: ClaudeCodeModel
-    ):
+    def test_read_structured_output_json_file(self, claude_code_model: ClaudeCodeModel):
         """Verify reading valid JSON from structured output file."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump({"name": "Alice", "age": 30}, f)
             f.flush()
             filepath = f.name
@@ -1164,9 +1105,7 @@ class TestStructuredOutputFileHandling:
         self, claude_code_model: ClaudeCodeModel
     ):
         """Verify handling of invalid JSON content."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             f.write("not valid json {{{")
             f.flush()
             filepath = f.name

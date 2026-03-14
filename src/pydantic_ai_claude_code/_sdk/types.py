@@ -7,7 +7,8 @@ external dependencies.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Literal, Union
+from collections.abc import Callable
+from typing import Any, Literal, Union
 
 from typing_extensions import TypedDict
 
@@ -47,14 +48,14 @@ class UserMessage(TypedDict, total=False):
     """User message in SDK format."""
 
     role: Literal["user"]
-    content: Union[str, list[ContentBlock]]
+    content: str | list[ContentBlock]
 
 
 class AssistantMessage(TypedDict, total=False):
     """Assistant message in SDK format."""
 
     role: Literal["assistant"]
-    content: Union[str, list[ContentBlock]]
+    content: str | list[ContentBlock]
     stop_reason: str | None
 
 

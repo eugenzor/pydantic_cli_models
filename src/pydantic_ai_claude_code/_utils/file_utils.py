@@ -24,9 +24,7 @@ def get_next_call_subdirectory(base_dir: str) -> Path:
     base_path.mkdir(parents=True, exist_ok=True)
 
     existing_numbers = [
-        int(d.name)
-        for d in base_path.iterdir()
-        if d.is_dir() and d.name.isdigit()
+        int(d.name) for d in base_path.iterdir() if d.is_dir() and d.name.isdigit()
     ]
     next_num = (max(existing_numbers) + 1) if existing_numbers else 1
 

@@ -1,6 +1,5 @@
 """Tests for MCPTool pre-built class."""
 
-import pytest
 
 from pydantic_ai_claude_code.tools import MCPTool
 from pydantic_ai_claude_code.tools.mcp import create_mcp_tools_config

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def build_function_selection_prompt(
-    function_tools: list[dict[str, Any]]
+    function_tools: list[dict[str, Any]],
 ) -> tuple[str, dict[str, dict[str, Any]]]:
     """
     Create a user-facing prompt that lists available functions and asks Claude to choose one or 'none'.
@@ -47,31 +47,33 @@ def build_function_selection_prompt(
 
         lines.append(f"{idx}. **{name}**: {description}")
 
-    lines.extend([
-        f"{len(function_tools) + 1}. **none**: Answer directly without calling a function",
-        "",
-        "## Instructions",
-        "",
-        "Read the user's request from `user_request.md` and determine:",
-        "- If the request needs one of the functions above, select it",
-        "- If the request can be answered directly without a function, select 'none'",
-        "",
-        "## Response Format",
-        "",
-        "Respond with ONLY a single line in this exact format:",
-        "",
-        "```",
-        "CHOICE: <function_name>",
-        "```",
-        "",
-        "or",
-        "",
-        "```",
-        "CHOICE: none",
-        "```",
-        "",
-        "Do not include any other text in your response.",
-    ])
+    lines.extend(
+        [
+            f"{len(function_tools) + 1}. **none**: Answer directly without calling a function",
+            "",
+            "## Instructions",
+            "",
+            "Read the user's request from `user_request.md` and determine:",
+            "- If the request needs one of the functions above, select it",
+            "- If the request can be answered directly without a function, select 'none'",
+            "",
+            "## Response Format",
+            "",
+            "Respond with ONLY a single line in this exact format:",
+            "",
+            "```",
+            "CHOICE: <function_name>",
+            "```",
+            "",
+            "or",
+            "",
+            "```",
+            "CHOICE: none",
+            "```",
+            "",
+            "Do not include any other text in your response.",
+        ]
+    )
 
     return "\n".join(lines), available_functions
 

@@ -40,7 +40,7 @@ class ProviderPreset:
     ):
         """
         Create a ProviderPreset representing a provider's metadata and runtime configuration.
-        
+
         Parameters:
             preset_id (str): Unique identifier for the preset (e.g., "deepseek").
             name (str): Human-readable display name for the provider.
@@ -75,10 +75,10 @@ class ProviderPreset:
     def get_model_name(self, model_alias: str) -> str:
         """
         Return the concrete model name for a given alias.
-        
+
         Parameters:
             model_alias (str): Model alias (e.g., "sonnet", "haiku", "opus", or "custom"). If "custom", the preset's "default" model mapping is used when present.
-        
+
         Returns:
             str: The mapped model name for the alias, or the alias itself if no mapping exists.
         """
@@ -93,11 +93,11 @@ class ProviderPreset:
     ) -> dict[str, str]:
         """
         Builds the environment variables required by this provider preset.
-        
+
         Parameters:
             api_key (str | None): If provided, sets the preset's configured API key field to this value.
             template_vars (dict[str, str] | None): Values used to substitute `${VAR}` placeholders in string environment values; missing placeholders fall back to existing OS environment variables.
-        
+
         Returns:
             dict[str, str]: Mapping of environment variable names to their stringified values.
         """
@@ -119,18 +119,16 @@ class ProviderPreset:
 
         return env_vars
 
-    def _substitute_templates(
-        self, value: str, template_vars: dict[str, str]
-    ) -> str:
+    def _substitute_templates(self, value: str, template_vars: dict[str, str]) -> str:
         """
         Replace `${VAR}` placeholders in `value` with provided template values or environment variables.
-        
+
         Placeholders of the form `${NAME}` are resolved using `template_vars[NAME]` when present; if not found there, the process environment is consulted. If a placeholder cannot be resolved, it is left unchanged and a warning is logged referencing this preset's ID.
-        
+
         Parameters:
             value (str): String containing `${VAR}` placeholders.
             template_vars (dict[str, str]): Mapping of placeholder names to replacement values.
-        
+
         Returns:
             str: The input string with resolved substitutions; unresolved placeholders remain as `${NAME}`.
         """
@@ -140,10 +138,10 @@ class ProviderPreset:
         def replace(match: re.Match) -> str:
             """
             Return the substitution for a regex match representing a `${VAR}` placeholder.
-            
+
             Parameters:
                 match (re.Match): A regex match where `group(1)` is the placeholder variable name to resolve.
-            
+
             Returns:
                 str: The replacement value from `template_vars` if present; otherwise the environment variable with that name if set; if neither is found, the original matched placeholder.
             """
@@ -167,7 +165,7 @@ class ProviderPreset:
     def to_dict(self) -> dict[str, Any]:
         """
         Serialize the ProviderPreset into a plain dictionary.
-        
+
         Returns:
             dict: Mapping with keys `preset_id`, `name`, `website_url`, `api_key_url`, `settings`, `is_official`, `is_partner`, `partner_promotion_key`, `category`, `api_key_field`, `models`, `template_values`, `endpoint_candidates`, and `theme` representing the preset's data.
         """
@@ -208,15 +206,14 @@ def _load_yaml_file(file_path: Path) -> dict[str, Any]:
             "PyYAML is required for provider presets. Install with: pip install pyyaml"
         )
         raise ImportError(
-            "PyYAML is required for provider presets. "
-            "Install with: pip install pyyaml"
+            "PyYAML is required for provider presets. Install with: pip install pyyaml"
         ) from exc
 
     if not file_path.exists():
         return {}
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             return yaml.safe_load(f) or {}
     except (OSError, yaml.YAMLError) as e:
         logger.exception("Failed to load YAML file %s: %s", file_path, e)
@@ -237,7 +234,7 @@ def _load_json_file(file_path: Path) -> dict[str, Any]:
         return {}
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             return json.load(f)
     except (OSError, json.JSONDecodeError) as e:
         logger.exception("Failed to load JSON file %s: %s", file_path, e)
@@ -247,7 +244,7 @@ def _load_json_file(file_path: Path) -> dict[str, Any]:
 def _parse_preset_dict(preset_id: str, data: dict[str, Any]) -> ProviderPreset:
     """
     Convert a raw preset mapping into a ProviderPreset instance.
-    
+
     Parameters:
         preset_id: Identifier to assign to the resulting preset; used as the default name when `data["name"]` is absent.
         data: Raw preset mapping (typically parsed from YAML/JSON). Recognized keys and their defaults:
@@ -264,7 +261,7 @@ def _parse_preset_dict(preset_id: str, data: dict[str, Any]) -> ProviderPreset:
             - template_values: per-model template values (defaults to {})
             - endpoint_candidates: list of endpoint URLs (defaults to [])
             - theme: optional theme metadata (defaults to {})
-    
+
     Returns:
         A ProviderPreset populated from the provided mapping.
     """
@@ -369,9 +366,7 @@ def load_user_presets() -> dict[str, ProviderPreset]:
         dict[str, ProviderPreset]: Mapping of preset IDs to loaded ProviderPreset objects.
     """
     user_dir = Path.home() / ".claude"
-    return _load_presets_from_dir(
-        user_dir, "providers.yaml", "providers.json", "user"
-    )
+    return _load_presets_from_dir(user_dir, "providers.yaml", "providers.json", "user")
 
 
 def load_project_presets(project_dir: Path | None = None) -> dict[str, ProviderPreset]:
@@ -428,11 +423,11 @@ def get_preset(
 ) -> ProviderPreset | None:
     """
     Retrieve the provider preset with the given identifier.
-    
+
     Parameters:
         preset_id (str): The preset identifier (e.g., "deepseek").
         project_dir (Path | None): Optional project directory to include project-level presets (defaults to current working directory).
-    
+
     Returns:
         ProviderPreset | None: The ProviderPreset for the given ID, or `None` if no matching preset exists.
     """
@@ -443,10 +438,10 @@ def get_preset(
 def list_presets(project_dir: Path | None = None) -> list[str]:
     """
     List all available provider preset IDs from built-in, user, and project scopes.
-    
+
     Parameters:
         project_dir (Path | None): Path to the project directory to include project-level presets; if None, the current working directory is used.
-    
+
     Returns:
         list[str]: A sorted list of preset ID strings.
     """
@@ -459,11 +454,11 @@ def get_presets_by_category(
 ) -> list[ProviderPreset]:
     """
     Retrieve all provider presets matching the specified category.
-    
+
     Parameters:
         category (ProviderCategory): Category to filter presets by.
         project_dir (Path | None): Project directory to include project-level presets; if None, uses the default lookup (current working directory).
-    
+
     Returns:
         list[ProviderPreset]: List of ProviderPreset instances whose `category` equals the given category.
     """

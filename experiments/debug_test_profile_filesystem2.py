@@ -18,6 +18,7 @@ class Address(BaseModel):
     age: int
     city: str
 
+
 # Simulate Phase 2 argument collection with FULL function schema
 def test_filesystem_creation() -> tuple[Path, dict[str, Any]]:
     # This is the FULL schema for create_user function (all parameters)
@@ -28,14 +29,11 @@ def test_filesystem_creation() -> tuple[Path, dict[str, Any]]:
             "email": {"type": "string"},
             "profile": {
                 "type": "object",
-                "properties": {
-                    "age": {"type": "integer"},
-                    "city": {"type": "string"}
-                },
-                "required": ["age", "city"]
-            }
+                "properties": {"age": {"type": "integer"}, "city": {"type": "string"}},
+                "required": ["age", "city"],
+            },
         },
-        "required": ["username", "email", "profile"]
+        "required": ["username", "email", "profile"],
     }
 
     # Create temp directory that won't be auto-cleaned
@@ -50,11 +48,11 @@ def test_filesystem_creation() -> tuple[Path, dict[str, Any]]:
         temp_dir=str(temp_dir),
     )
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("INSTRUCTIONS FOR CLAUDE (Phase 2 - Argument Collection):")
-    print("="*80)
+    print("=" * 80)
     print(instructions)
-    print("="*80)
+    print("=" * 80)
 
     # Simulate what Claude SHOULD create based on the request:
     # "Create a user with username john_doe, email john@example.com, profile age=30, city=London"
@@ -92,13 +90,14 @@ def test_filesystem_creation() -> tuple[Path, dict[str, Any]]:
 
     return temp_dir, schema
 
+
 if __name__ == "__main__":
     temp_dir, schema = test_filesystem_creation()
 
     # Now test reading it back
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TESTING READ BACK:")
-    print("="*80)
+    print("=" * 80)
 
     result = read_structure_from_filesystem(
         schema=schema,

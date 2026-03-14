@@ -8,7 +8,6 @@ import logging
 import os
 import shutil
 import tempfile
-import uuid
 from pathlib import Path
 from typing import Any
 
@@ -39,8 +38,7 @@ def create_unstructured_output_path() -> str:
     """
     # Use tempfile.mkstemp for secure temporary file creation
     fd, temp_path = tempfile.mkstemp(
-        prefix="claude_unstructured_output_",
-        suffix=".txt"
+        prefix="claude_unstructured_output_", suffix=".txt"
     )
     # Close the file descriptor since we just need the path
     os.close(fd)
@@ -79,13 +77,13 @@ def read_structured_output(
 def read_unstructured_output(output_file: str) -> str:
     """
     Read unstructured output from the given file.
-    
+
     Parameters:
         output_file (str): Path to the unstructured output file.
-    
+
     Returns:
         The file's contents as a string.
-    
+
     Raises:
         RuntimeError: If the file does not exist.
     """

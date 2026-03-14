@@ -13,9 +13,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import cast
 
+from ._utils import clean_subprocess_env
 from .exceptions import ClaudeOAuthError
 from .types import ClaudeCodeSettings, ClaudeJSONResponse, ClaudeStreamEvent
-from ._utils import clean_subprocess_env
 
 logger = logging.getLogger(__name__)
 
@@ -30,17 +30,17 @@ def convert_primitive_value(
 ) -> int | float | bool | str | None:
     """
     Convert a string to a primitive value of the specified JSON schema type.
-    
+
     Supported target types:
     - "integer": parsed with int().
     - "number": parsed as int when the string has no decimal point or exponent, otherwise as float.
     - "boolean": case-insensitive truthy values are "true", "1", and "yes".
     - "string": returned unchanged.
-    
+
     Parameters:
         value (str): The input string to convert.
         field_type (str): Target type name ("integer", "number", "boolean", "string").
-    
+
     Returns:
         int|float|bool|str|None: `int`, `float`, `bool`, or `str` on successful conversion; `None` if parsing fails or the type is unsupported.
     """
@@ -72,10 +72,10 @@ def convert_primitive_value(
 def strip_markdown_code_fence(text: str) -> str:
     """
     Remove surrounding Markdown code fences (e.g., ``` or ```json`) from the given text.
-    
+
     Parameters:
         text (str): Text that may be wrapped in a Markdown code fence.
-    
+
     Returns:
         str: The input text with any leading/trailing Markdown code fence markers removed and surrounding whitespace trimmed.
     """
@@ -122,12 +122,12 @@ async def create_subprocess_async(
 def _format_cli_error_message(elapsed: float, returncode: int, stderr_text: str) -> str:
     """
     Constructs a user-facing error message for a failed Claude CLI invocation.
-    
+
     Parameters:
         elapsed: Elapsed time of the CLI run in seconds. If greater than LONG_RUNTIME_THRESHOLD_SECONDS the message will include a note suggesting the task may be too complex.
         returncode: Process exit code reported by the CLI.
         stderr_text: Captured standard error output from the CLI.
-    
+
     Returns:
         A formatted error message string describing the failure and, when appropriate, a note about long-running tasks.
     """
@@ -143,13 +143,13 @@ def _format_cli_error_message(elapsed: float, returncode: int, stderr_text: str)
 def resolve_claude_cli_path(settings: ClaudeCodeSettings | None = None) -> str:
     """
     Determine the filesystem path to the Claude CLI binary by checking, in order: the provided settings, the CLAUDE_CLI_PATH environment variable, and the system PATH.
-    
+
     Parameters:
         settings (ClaudeCodeSettings | None): Optional settings that may contain `claude_cli_path`.
-    
+
     Returns:
         str: Filesystem path to the Claude CLI binary.
-    
+
     Raises:
         RuntimeError: If the Claude CLI binary cannot be located via settings, environment, or PATH.
     """
@@ -185,15 +185,15 @@ def resolve_claude_cli_path(settings: ClaudeCodeSettings | None = None) -> str:
 def resolve_sandbox_runtime_path(settings: ClaudeCodeSettings | None = None) -> str:
     """
     Resolve the filesystem path to the sandbox-runtime (`srt`) executable.
-    
+
     Resolution priority (highest first): 1) settings["sandbox_runtime_path"], 2) SANDBOX_RUNTIME_PATH environment variable, 3) auto-detect via the system PATH.
-    
+
     Parameters:
         settings (ClaudeCodeSettings | None): Optional settings that may include `sandbox_runtime_path`.
-    
+
     Returns:
         str: The resolved path to the `srt` executable.
-    
+
     Raises:
         RuntimeError: If the `srt` binary cannot be located by any of the resolution methods.
     """
@@ -206,7 +206,9 @@ def resolve_sandbox_runtime_path(settings: ClaudeCodeSettings | None = None) -> 
     # Priority 2: Environment variable
     env_path = os.environ.get("SANDBOX_RUNTIME_PATH")
     if env_path:
-        logger.debug("Using sandbox-runtime from SANDBOX_RUNTIME_PATH env var: %s", env_path)
+        logger.debug(
+            "Using sandbox-runtime from SANDBOX_RUNTIME_PATH env var: %s", env_path
+        )
         return env_path
 
     # Priority 3: Auto-resolve from PATH
@@ -229,10 +231,10 @@ def resolve_sandbox_runtime_path(settings: ClaudeCodeSettings | None = None) -> 
 def detect_rate_limit(error_output: str) -> tuple[bool, str | None]:
     """
     Detect whether the combined CLI output indicates a rate limit and extract the reported reset time.
-    
+
     Parameters:
         error_output (str): Combined stdout and stderr text from the Claude CLI.
-    
+
     Returns:
         (is_rate_limited, reset_time_str) (tuple[bool, str | None]): `True` if a rate limit message was found, `False` otherwise; `reset_time_str` is the captured reset time (e.g., "3PM") when present, or `None`.
     """
@@ -252,10 +254,10 @@ def detect_rate_limit(error_output: str) -> tuple[bool, str | None]:
 def calculate_wait_time(reset_time_str: str) -> int:
     """
     Compute the number of seconds to wait until the given reset time, including a one-minute buffer.
-    
+
     Parameters:
         reset_time_str (str): Reset time in 12-hour format without minutes, e.g. "3PM" or "11AM".
-    
+
     Returns:
         int: Seconds to wait until the reset time plus a one-minute buffer. If the parsed time has already passed today, the wait is computed for the same time on the next day. Returns 300 (5 minutes) if the input cannot be parsed.
     """
@@ -301,10 +303,10 @@ def calculate_wait_time(reset_time_str: str) -> int:
 def detect_cli_infrastructure_failure(stderr: str) -> bool:
     """
     Determine whether stderr indicates a transient Claude CLI infrastructure failure.
-    
+
     Parameters:
         stderr (str): Standard error output from the Claude CLI process.
-    
+
     Returns:
         bool: `True` if stderr contains indicators of transient infrastructure failures (e.g., Node.js module resolution errors like "Cannot find module" or "MODULE_NOT_FOUND", or filesystem errors like "ENOENT" or "EACCES"), `False` otherwise.
     """
@@ -392,11 +394,11 @@ def detect_oauth_error(stdout: str, stderr: str) -> tuple[bool, str | None]:
 def _add_tool_permission_flags(cmd: list[str], settings: ClaudeCodeSettings) -> None:
     """
     Append tool permission flags to a Claude CLI command list based on provided settings.
-    
+
     If `settings` contains an "allowed_tools" iterable, appends "--allowed-tools" followed by those tool names.
     If `settings` contains a "disallowed_tools" iterable, appends "--disallowed-tools" followed by those tool names.
     This function mutates the `cmd` list in place.
-    
+
     Parameters:
         cmd (list[str]): The CLI command argument list to modify.
         settings (ClaudeCodeSettings): Configuration mapping that may include the keys
@@ -416,12 +418,12 @@ def _add_tool_permission_flags(cmd: list[str], settings: ClaudeCodeSettings) -> 
 def _add_model_flags(cmd: list[str], settings: ClaudeCodeSettings) -> None:
     """
     Append model-related CLI flags to `cmd` when corresponding settings are present.
-    
+
     Adds:
     - `--model <model>` if `settings["model"]` is set.
     - `--fallback-model <fallback_model>` if `settings["fallback_model"]` is set.
     - `--session-id <session_id>` if `settings["session_id"]` is set.
-    
+
     Parameters:
         cmd (list[str]): The command argument list to extend in-place.
         settings (ClaudeCodeSettings): Configuration mapping that may contain
@@ -475,12 +477,12 @@ def build_claude_command(
 ) -> list[str]:
     """
     Constructs the Claude CLI command-line arguments, optionally wrapped with sandbox-runtime for secure execution.
-    
+
     Parameters:
         settings (ClaudeCodeSettings | None): Optional settings that control flags, sandbox wrapping, extra CLI arguments, and where sandbox environment variables will be stored under the key "__sandbox_env".
         input_format (str): Input format, e.g. "text" or "stream-json".
         output_format (str): Output format, e.g. "text", "json", or "stream-json".
-    
+
     Returns:
         list[str]: The command argument list to execute. If sandboxing is enabled via settings["use_sandbox_runtime"], the returned list is the sandbox-runtime wrapper followed by the Claude CLI command and settings["__sandbox_env"] will be populated with required environment variables.
     """
@@ -533,7 +535,7 @@ def build_claude_command(
         # Write config to temp file
         config_fd, config_path = tempfile.mkstemp(suffix=".json", prefix="srt_config_")
         try:
-            with os.fdopen(config_fd, 'w') as f:
+            with os.fdopen(config_fd, "w") as f:
                 json.dump(config, f)
 
             # Redirect Claude config/debug to /tmp to avoid ~/.claude/ writes
@@ -547,7 +549,9 @@ def build_claude_command(
             settings_file = home_claude_dir / "settings.json"
 
             if credentials_file.exists():
-                shutil.copy2(credentials_file, Path(claude_config_dir) / ".credentials.json")
+                shutil.copy2(
+                    credentials_file, Path(claude_config_dir) / ".credentials.json"
+                )
                 logger.debug("Copied credentials to sandbox config dir")
 
             if settings_file.exists():
@@ -558,7 +562,8 @@ def build_claude_command(
             # Environment variables (IS_SANDBOX=1, CLAUDE_CONFIG_DIR) will be set via subprocess env parameter
             wrapped_cmd = [
                 srt_path,
-                "--settings", config_path,
+                "--settings",
+                config_path,
                 "--",
             ] + cmd
 
@@ -569,7 +574,10 @@ def build_claude_command(
                     "CLAUDE_CONFIG_DIR": claude_config_dir,
                 }
 
-            logger.info("Wrapped Claude command with sandbox (IS_SANDBOX=1, CLAUDE_CONFIG_DIR=%s)", claude_config_dir)
+            logger.info(
+                "Wrapped Claude command with sandbox (IS_SANDBOX=1, CLAUDE_CONFIG_DIR=%s)",
+                claude_config_dir,
+            )
             logger.debug("Full sandboxed command: %s", " ".join(wrapped_cmd))
             return wrapped_cmd
         except Exception:
@@ -587,15 +595,17 @@ def build_claude_command(
 def _get_next_call_subdirectory(base_dir: str) -> Path:
     """
     Create and return a new numbered subdirectory under base_dir, creating it if necessary.
-    
+
     Parameters:
         base_dir (str): Directory in which to create the next numeric subdirectory.
-    
+
     Returns:
         Path: Path to the created subdirectory whose name is one greater than the existing numeric subdirectories (e.g., base_dir/1, base_dir/2).
     """
     base_path = Path(base_dir)
-    existing_subdirs = [d for d in base_path.iterdir() if d.is_dir() and d.name.isdigit()]
+    existing_subdirs = [
+        d for d in base_path.iterdir() if d.is_dir() and d.name.isdigit()
+    ]
     next_num = len(existing_subdirs) + 1
 
     subdir = base_path / str(next_num)
@@ -608,12 +618,12 @@ def _get_next_call_subdirectory(base_dir: str) -> Path:
 def _copy_additional_files(cwd: str, additional_files: dict[str, Path]) -> None:
     """
     Copy specified files into a working directory, creating any necessary destination subdirectories.
-    
+
     Parameters:
         cwd (str): Destination working directory path.
         additional_files (dict[str, Path]): Mapping from destination relative path (may include subdirectories)
             to the source file Path to copy.
-    
+
     Raises:
         FileNotFoundError: If a source path does not exist.
         ValueError: If a source path exists but is not a regular file.
@@ -649,12 +659,12 @@ def _copy_additional_files(cwd: str, additional_files: dict[str, Path]) -> None:
 def _determine_working_directory(settings: ClaudeCodeSettings | None) -> str:
     """
     Determine the working directory path to use for a Claude call.
-    
+
     If `settings` contains a "working_directory" key, ensure that base directory exists and return the path for the next numbered subdirectory (the numbered subdirectory itself is not created). If `settings` is None or does not specify a working directory, create and return a new temporary directory (which is created immediately).
-    
+
     Parameters:
         settings (ClaudeCodeSettings | None): Optional settings mapping; may include a "working_directory" path.
-    
+
     Returns:
         str: Filesystem path that should be used as the working directory for the call.
     """
@@ -667,7 +677,9 @@ def _determine_working_directory(settings: ClaudeCodeSettings | None) -> str:
     else:
         # User-specified directory - will create numbered subdirectory later
         Path(base_dir).mkdir(parents=True, exist_ok=True)
-        existing_subdirs = [d for d in Path(base_dir).iterdir() if d.is_dir() and d.name.isdigit()]
+        existing_subdirs = [
+            d for d in Path(base_dir).iterdir() if d.is_dir() and d.name.isdigit()
+        ]
         next_num = len(existing_subdirs) + 1
         return str(Path(base_dir) / str(next_num))
 
@@ -675,7 +687,7 @@ def _determine_working_directory(settings: ClaudeCodeSettings | None) -> str:
 def _log_prompt_info(prompt_file: Path, prompt: str) -> None:
     """
     Log metadata and the full prompt text to the module logger for debugging.
-    
+
     Parameters:
         prompt_file (Path): Filesystem path where the prompt was written.
         prompt (str): The complete prompt text to be logged.
@@ -695,13 +707,13 @@ def _setup_working_directory_and_prompt(
 ) -> str:
     """
     Establishes a per-call working directory, writes the prompt to prompt.md, copies any additional files, and records paths/state in settings.
-    
+
     Parameters:
         prompt (str): The prompt text to write into prompt.md in the working directory.
         settings (ClaudeCodeSettings | None): Optional mutable settings mapping used to:
             - read configuration values (e.g., "working_directory", "additional_files"),
             - persist created state keys ("__working_directory", "__response_file_path", "__prompt_text", "__temp_base_directory").
-    
+
     Returns:
         str: Filesystem path of the created or reused working directory (including the call-specific subdirectory).
     """
@@ -721,7 +733,9 @@ def _setup_working_directory_and_prompt(
         if not base_dir:
             # No working directory specified - create temp directory for this session
             # Check if we already created a temp base directory for these settings
-            existing_temp_base = settings.get("__temp_base_directory") if settings else None
+            existing_temp_base = (
+                settings.get("__temp_base_directory") if settings else None
+            )
 
             if not existing_temp_base:
                 # First call with these settings - create new temp base directory
@@ -762,13 +776,16 @@ def _setup_working_directory_and_prompt(
 
 
 def _execute_sync_command(
-    cmd: list[str], cwd: str, timeout_seconds: int, settings: ClaudeCodeSettings | None = None
+    cmd: list[str],
+    cwd: str,
+    timeout_seconds: int,
+    settings: ClaudeCodeSettings | None = None,
 ) -> subprocess.CompletedProcess[str]:
     """
     Run a CLI command in the given working directory and return the completed process result.
-    
+
     Passes prompt text from settings via stdin and applies sandbox environment variables from settings["__sandbox_env"] when present.
-    
+
     Parameters:
         cmd (list[str]): Command and arguments to execute.
         cwd (str): Working directory for the subprocess.
@@ -776,10 +793,10 @@ def _execute_sync_command(
         settings (ClaudeCodeSettings | None): Optional settings; if provided, may include:
             - "__sandbox_env": dict of environment variables to merge into the subprocess environment.
             - "__prompt_text": string to pass to the process via stdin.
-    
+
     Returns:
         subprocess.CompletedProcess[str]: Completed process containing stdout, stderr, and return code.
-    
+
     Raises:
         RuntimeError: If the command exceeds timeout_seconds.
     """
@@ -829,13 +846,13 @@ def _check_rate_limit(
 ) -> tuple[bool, int]:
     """
     Determine whether a failed CLI invocation indicates a rate limit that should be retried.
-    
+
     Parameters:
         stdout_text (str): Decoded standard output from the process.
         stderr_text (str): Decoded standard error from the process.
         returncode (int): Process exit code.
         retry_enabled (bool): Whether automatic retry behavior is enabled.
-    
+
     Returns:
         tuple[bool, int]: First element is `True` if the failure appears to be a rate-limit and the caller should retry, `False` otherwise. Second element is the number of seconds to wait before retrying (0 when not retrying).
     """
@@ -846,7 +863,9 @@ def _check_rate_limit(
         if is_rate_limited and reset_time:
             wait_seconds = calculate_wait_time(reset_time)
             wait_minutes = wait_seconds // 60
-            logger.info("Rate limit hit. Waiting %d minutes until reset...", wait_minutes)
+            logger.info(
+                "Rate limit hit. Waiting %d minutes until reset...", wait_minutes
+            )
             return True, wait_seconds
 
     return False, 0
@@ -862,9 +881,9 @@ def _handle_command_failure(
 ) -> None:
     """
     Raise a RuntimeError for a generic Claude CLI command failure after logging diagnostic details.
-    
+
     Logs the elapsed time, return code, prompt length, working directory, stderr, and a snippet of stdout, then raises a RuntimeError with a formatted CLI error message.
-    
+
     Parameters:
         stdout_text (str): Decoded standard output from the process (may be empty).
         stderr_text (str): Decoded standard error from the process (may be empty).
@@ -872,7 +891,7 @@ def _handle_command_failure(
         elapsed (float): Elapsed execution time in seconds.
         prompt_len (int): Length of the prompt that was sent to the CLI.
         cwd (str): Working directory where the command was executed.
-    
+
     Raises:
         RuntimeError: Always raised with a user-facing message describing the CLI failure.
     """
@@ -900,13 +919,13 @@ def _handle_command_failure(
 def _parse_json_response(raw_stdout: str) -> ClaudeJSONResponse:
     """
     Parse a Claude CLI JSON output string and return the final response event.
-    
+
     Parameters:
         raw_stdout (str): Raw stdout from the Claude CLI; may include a leading sandbox-runtime diagnostic line.
-    
+
     Returns:
         ClaudeJSONResponse: Parsed response object. If the CLI emitted verbose output (a list of events), the event with `"type": "result"` is returned.
-    
+
     Raises:
         RuntimeError: If verbose output is received but no `"result"` event is present.
     """
@@ -914,9 +933,9 @@ def _parse_json_response(raw_stdout: str) -> ClaudeJSONResponse:
     # srt outputs "Running: <command>" on first line before actual JSON
     if raw_stdout.startswith("Running: "):
         # Skip first line
-        first_newline = raw_stdout.find('\n')
+        first_newline = raw_stdout.find("\n")
         if first_newline > 0:
-            raw_stdout = raw_stdout[first_newline + 1:]
+            raw_stdout = raw_stdout[first_newline + 1 :]
             logger.debug("Stripped srt diagnostic line from stdout")
 
     raw_response = json.loads(raw_stdout)
@@ -965,9 +984,9 @@ def _classify_execution_error(
 ) -> tuple[str, float]:
     """
     Determine handling for a failed Claude CLI execution and whether a retry is required.
-    
+
     Checks, in order: OAuth/authentication errors (raises ClaudeOAuthError), rate-limit errors (returns ("retry_rate_limit", wait_seconds)), transient CLI infrastructure failures (returns ("retry_infra", 0.0)), and otherwise raises a RuntimeError describing the failure.
-    
+
     Parameters:
         stdout_text (str): Captured standard output from the CLI process.
         stderr_text (str): Captured standard error from the CLI process.
@@ -975,12 +994,12 @@ def _classify_execution_error(
         elapsed (float): Execution duration in seconds.
         retry_enabled (bool): Whether rate-limit retry logic is permitted.
         cwd (str): Working directory where the command was executed.
-    
+
     Returns:
         tuple[str, float]: A pair (action, wait_seconds):
             - action: "retry_rate_limit" or "retry_infra".
             - wait_seconds: Seconds to wait before retrying (non-zero for rate-limit retries, 0.0 for infra retries).
-    
+
     Raises:
         ClaudeOAuthError: If an OAuth/authentication error is detected.
         RuntimeError: For non-retryable/generic failures (provides formatted error details).
@@ -990,11 +1009,15 @@ def _classify_execution_error(
     if is_oauth_error and oauth_message:
         raise ClaudeOAuthError(
             f"Claude CLI authentication expired after {elapsed:.1f}s: {oauth_message}",
-            reauth_instruction=oauth_message if "/login" in oauth_message else "Please run /login"
+            reauth_instruction=oauth_message
+            if "/login" in oauth_message
+            else "Please run /login",
         )
 
     # Priority 2: Check rate limit (less specific, could have false positives)
-    should_retry, wait_seconds = _check_rate_limit(stdout_text, stderr_text, returncode, retry_enabled)
+    should_retry, wait_seconds = _check_rate_limit(
+        stdout_text, stderr_text, returncode, retry_enabled
+    )
     if should_retry:
         return ("retry_rate_limit", wait_seconds)
 
@@ -1038,14 +1061,14 @@ def _try_sync_execution_with_rate_limit_retry(
 ) -> tuple[ClaudeJSONResponse | None, bool]:
     """
     Execute a Claude CLI command synchronously and handle automatic retries for rate-limit and transient infrastructure failures.
-    
+
     Parameters:
         cmd (list[str]): Command and arguments to run.
         cwd (str): Working directory for the command.
         timeout_seconds (int): Timeout in seconds for the command execution.
         retry_enabled (bool): If True, enable retry behavior when a rate-limit is detected.
         settings (ClaudeCodeSettings | None): Optional runtime settings used for command execution and response processing.
-    
+
     Returns:
         tuple[ClaudeJSONResponse | None, bool]: A tuple (response, retry_infra).
             - `response`: the parsed Claude JSON response on success, or `None` when an infrastructure-retry is requested.
@@ -1085,11 +1108,11 @@ def run_claude_sync(
 ) -> ClaudeJSONResponse:
     """
     Execute a prompt against the Claude CLI and return the parsed JSON response.
-    
+
     Runs the Claude CLI synchronously, applying retry logic for rate-limit responses (when enabled in settings)
     and for transient CLI infrastructure failures. Saves a debug copy of the response when debug saving is enabled
     in settings.
-    
+
     Parameters:
         prompt: The prompt text to send to Claude.
         settings: Optional execution settings. Recognized keys include:
@@ -1097,10 +1120,10 @@ def run_claude_sync(
             - "timeout_seconds" (int): CLI invocation timeout in seconds (default 900).
             - "working_directory" (str or Path): base dir for per-call working directories.
             - debug-related keys used for saving prompts/responses.
-    
+
     Returns:
         ClaudeJSONResponse: The parsed JSON response object returned by the Claude CLI.
-    
+
     Raises:
         RuntimeError: If persistent CLI infrastructure failures occur and maximum retry attempts are exhausted.
     """
@@ -1122,7 +1145,7 @@ def run_claude_sync(
 
             # Infrastructure failure detected
             if should_retry_infra and attempt < MAX_CLI_RETRIES - 1:
-                backoff_seconds = RETRY_BACKOFF_BASE ** attempt
+                backoff_seconds = RETRY_BACKOFF_BASE**attempt
                 logger.warning(
                     "Claude CLI infrastructure failure detected (attempt %d/%d). "
                     "Retrying in %d seconds...",
@@ -1147,7 +1170,7 @@ def run_claude_sync(
             # Check if the error is due to infrastructure failure
             error_str = str(e)
             if detect_cli_infrastructure_failure(error_str):
-                backoff_seconds = RETRY_BACKOFF_BASE ** attempt
+                backoff_seconds = RETRY_BACKOFF_BASE**attempt
                 logger.warning(
                     "Claude CLI infrastructure failure in execution (attempt %d/%d). "
                     "Retrying in %d seconds...",
@@ -1165,22 +1188,25 @@ def run_claude_sync(
 
 
 async def _execute_async_command(
-    cmd: list[str], cwd: str, timeout_seconds: int, settings: ClaudeCodeSettings | None = None
+    cmd: list[str],
+    cwd: str,
+    timeout_seconds: int,
+    settings: ClaudeCodeSettings | None = None,
 ) -> tuple[bytes, bytes, int]:
     """
     Run the given command asynchronously with a timeout, optionally applying sandbox environment variables and sending a prompt via stdin.
-    
+
     Parameters:
-    	cmd (list[str]): The command and arguments to execute.
-    	cwd (str): Working directory for the subprocess.
-    	timeout_seconds (int): Number of seconds to wait before timing out.
-    	settings (ClaudeCodeSettings | None): Optional settings. If settings contains "__sandbox_env", those variables are merged into the process environment. If settings contains "__prompt_text", that text is sent to the process's stdin.
-    
+        cmd (list[str]): The command and arguments to execute.
+        cwd (str): Working directory for the subprocess.
+        timeout_seconds (int): Number of seconds to wait before timing out.
+        settings (ClaudeCodeSettings | None): Optional settings. If settings contains "__sandbox_env", those variables are merged into the process environment. If settings contains "__prompt_text", that text is sent to the process's stdin.
+
     Returns:
-    	tuple[bytes, bytes, int]: A tuple of (stdout_bytes, stderr_bytes, return_code).
-    
+        tuple[bytes, bytes, int]: A tuple of (stdout_bytes, stderr_bytes, return_code).
+
     Raises:
-    	RuntimeError: If the command does not complete before timeout_seconds.
+        RuntimeError: If the command does not complete before timeout_seconds.
     """
     start_time = time.time()
     logger.info("Running Claude CLI asynchronously in %s", cwd)
@@ -1197,8 +1223,10 @@ async def _execute_async_command(
         # Get prompt from settings to pass via stdin (avoids quoting issues with srt)
         prompt_input = None
         if settings and settings.get("__prompt_text"):
-            prompt_input = settings["__prompt_text"].encode('utf-8')
-            logger.debug("Passing prompt via stdin (%d chars)", len(settings["__prompt_text"]))
+            prompt_input = settings["__prompt_text"].encode("utf-8")
+            logger.debug(
+                "Passing prompt via stdin (%d chars)", len(settings["__prompt_text"])
+            )
 
         stdout, stderr = await asyncio.wait_for(
             process.communicate(input=prompt_input),
@@ -1235,28 +1263,30 @@ async def _try_async_execution_with_rate_limit_retry(
 ) -> tuple[ClaudeJSONResponse | None, bool]:
     """
     Execute the Claude CLI command asynchronously with built-in handling for rate limits and transient infrastructure failures.
-    
+
     Retries automatically when a rate-limit condition is detected (sleeps for the computed wait time before retrying). If a transient CLI infrastructure failure is detected, returns a signal for the caller to perform an infrastructure retry. Uses shared error-classification logic to detect OAuth errors, rate limits, and other failures.
-    
+
     Parameters:
         cmd (list[str]): The command and arguments to run.
         cwd (str): Working directory for the subprocess.
         timeout_seconds (int): Per-invocation timeout in seconds.
         retry_enabled (bool): If True, allow automatic retries when rate limits are encountered.
         settings (ClaudeCodeSettings | None): Optional runtime/settings passed through to execution and response processing.
-    
+
     Returns:
         tuple[ClaudeJSONResponse | None, bool]: (response, should_retry_infra)
             - `response`: Parsed Claude JSON response on success, or `None` when an infrastructure retry is required.
             - `should_retry_infra`: `True` when the caller should retry the entire execution due to a transient infrastructure failure, `False` otherwise.
-    
+
     Raises:
         ClaudeOAuthError: When an OAuth/authentication error is detected and reauthentication is required.
         RuntimeError: For timeouts, CLI failures that are not recoverable by retries, or response parsing/validation errors.
     """
     while True:
         start_time = time.time()
-        process_output = await _execute_async_command(cmd, cwd, timeout_seconds, settings)
+        process_output = await _execute_async_command(
+            cmd, cwd, timeout_seconds, settings
+        )
         elapsed = time.time() - start_time
         stdout, stderr, returncode = process_output
 
@@ -1289,14 +1319,14 @@ async def run_claude_async(
 ) -> ClaudeJSONResponse:
     """
     Run the Claude CLI asynchronously with retry logic and return the parsed JSON response.
-    
+
     Parameters:
         prompt (str): The prompt text to send to Claude.
         settings: Optional execution settings; supports keys such as "retry_on_rate_limit" (bool) and "timeout_seconds" (int).
-    
+
     Returns:
         ClaudeJSONResponse: The parsed JSON response produced by the Claude CLI.
-    
+
     Raises:
         ClaudeOAuthError: If an OAuth/authentication error is detected and reauthentication is required.
         RuntimeError: If the CLI fails permanently after the configured retries or a persistent infrastructure failure occurs.
@@ -1310,7 +1340,10 @@ async def run_claude_async(
     # Outer retry loop for infrastructure failures
     for attempt in range(MAX_CLI_RETRIES):
         try:
-            response, should_retry_infra = await _try_async_execution_with_rate_limit_retry(
+            (
+                response,
+                should_retry_infra,
+            ) = await _try_async_execution_with_rate_limit_retry(
                 cmd, cwd, timeout_seconds, retry_enabled, settings
             )
             if response:
@@ -1319,7 +1352,7 @@ async def run_claude_async(
 
             # Infrastructure failure detected
             if should_retry_infra and attempt < MAX_CLI_RETRIES - 1:
-                backoff_seconds = RETRY_BACKOFF_BASE ** attempt
+                backoff_seconds = RETRY_BACKOFF_BASE**attempt
                 logger.warning(
                     "Claude CLI infrastructure failure detected (attempt %d/%d). "
                     "Retrying in %d seconds...",
@@ -1344,7 +1377,7 @@ async def run_claude_async(
             # Check if the error is due to infrastructure failure
             error_str = str(e)
             if detect_cli_infrastructure_failure(error_str):
-                backoff_seconds = RETRY_BACKOFF_BASE ** attempt
+                backoff_seconds = RETRY_BACKOFF_BASE**attempt
                 logger.warning(
                     "Claude CLI infrastructure failure in execution (attempt %d/%d). "
                     "Retrying in %d seconds...",
@@ -1364,10 +1397,10 @@ async def run_claude_async(
 def parse_stream_json_line(line: str) -> ClaudeStreamEvent | None:
     """
     Parse a single line of stream-json output into a ClaudeStreamEvent.
-    
+
     Parameters:
         line (str): A single line of text from stream-json output.
-    
+
     Returns:
         ClaudeStreamEvent | None: The parsed event when the line contains valid JSON, `None` if the line is empty or cannot be parsed.
     """
@@ -1392,12 +1425,12 @@ _debug_counter = 0
 def _get_debug_dir(settings: ClaudeCodeSettings | None) -> Path | None:
     """
     Get the directory used to save debug prompts and responses when debug saving is enabled.
-    
+
     Parameters:
         settings (ClaudeCodeSettings | None): Configuration mapping; checks the `debug_save_prompts` key.
             - If `True`, uses `/tmp/claude_debug`.
             - If a string/path-like value, uses that path.
-    
+
     Returns:
         Path: Path to the debug directory when enabled, `None` if debugging is disabled or `settings` is None.
     """
@@ -1420,7 +1453,7 @@ def _get_debug_dir(settings: ClaudeCodeSettings | None) -> Path | None:
 def _save_prompt_debug(prompt: str, settings: ClaudeCodeSettings | None) -> None:
     """
     Save the provided prompt to a timestamped file in the configured debug directory when debug saving is enabled.
-    
+
     Parameters:
         prompt (str): The prompt text to persist.
         settings (ClaudeCodeSettings | None): Settings that control debug behavior and debug directory location; if debug saving is disabled or no debug directory is configured, this function does nothing.
@@ -1440,12 +1473,14 @@ def _save_prompt_debug(prompt: str, settings: ClaudeCodeSettings | None) -> None
     logger.info("Saved prompt to: %s", filepath)
 
 
-def _save_response_debug(response: ClaudeJSONResponse, settings: ClaudeCodeSettings | None) -> None:
+def _save_response_debug(
+    response: ClaudeJSONResponse, settings: ClaudeCodeSettings | None
+) -> None:
     """
     Save the Claude JSON response to a timestamped file in the configured debug directory when debug saving is enabled.
-    
+
     If debug saving is disabled in settings, this function is a no-op. When enabled, the response is written as pretty-printed JSON to a timestamped file and the saved path is logged.
-    
+
     Parameters:
         response (ClaudeJSONResponse): The parsed Claude response to persist.
         settings (ClaudeCodeSettings | None): Optional settings that enable/configure debug saving and the debug directory.
@@ -1469,11 +1504,11 @@ def _save_raw_response_to_working_dir(
 ) -> None:
     """
     Save the JSON Claude response to the configured response file in the working directory.
-    
+
     If `settings` is None or does not contain "__response_file_path", the function is a no-op.
     On success the response is written as pretty-printed JSON to the path specified by
     settings["__response_file_path"]. If writing fails, a warning is logged.
-    
+
     Parameters:
         response (ClaudeJSONResponse): The parsed Claude response object to persist.
         settings (ClaudeCodeSettings | None): Settings mapping that must include

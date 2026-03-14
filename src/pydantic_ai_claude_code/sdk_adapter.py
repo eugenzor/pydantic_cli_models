@@ -5,20 +5,20 @@ This module provides adapters for converting between Claude Agent SDK
 message formats and Pydantic AI message formats.
 """
 
-from typing import Any, Optional
-from datetime import datetime, timezone
-import uuid
 import logging
+import uuid
+from datetime import datetime, timezone
+from typing import Any
 
 from pydantic_ai.messages import (
     ModelMessage,
     ModelRequest,
     ModelResponse,
-    UserPromptPart,
     SystemPromptPart,
     TextPart,
     ToolCallPart,
     ToolReturnPart,
+    UserPromptPart,
 )
 from pydantic_ai.usage import RequestUsage
 
@@ -38,23 +38,23 @@ class SDKAdapter:
         self,
         messages: list[ModelMessage],
         include_system: bool = True,
-        model_request_parameters: Optional[Any] = None,
+        model_request_parameters: Any | None = None,
     ) -> str:
         """
         Convert a sequence of Pydantic AI messages into a single SDK-formatted prompt string.
-        
+
         Each message part is rendered with a role prefix:
         - System parts as "System: {content}" (included only when include_system is True)
         - User parts as "User: {content}"
         - Assistant text parts as "Assistant: {content}"
         - Tool return parts as "Tool Result ({tool_name}): {content}"
         - Tool call parts as "Tool Call: {tool_name}({args})"
-        
+
         Parameters:
             messages (list[ModelMessage]): Messages to convert; may be ModelRequest (with prompt parts) or ModelResponse (with response parts).
             include_system (bool): Whether to include system prompt parts in the output.
             model_request_parameters (Optional[Any]): Optional model request parameters (not used in formatting, accepted for API compatibility).
-        
+
         Returns:
             str: The prompt string with message parts joined by two newlines.
         """
@@ -69,18 +69,14 @@ class SDKAdapter:
                     elif isinstance(part, UserPromptPart):
                         parts.append(f"User: {part.content}")
                     elif isinstance(part, ToolReturnPart):
-                        parts.append(
-                            f"Tool Result ({part.tool_name}): {part.content}"
-                        )
+                        parts.append(f"Tool Result ({part.tool_name}): {part.content}")
             elif hasattr(message, "parts"):
                 # ModelResponse
                 for part in message.parts:
                     if isinstance(part, TextPart):
                         parts.append(f"Assistant: {part.content}")
                     elif isinstance(part, ToolCallPart):
-                        parts.append(
-                            f"Tool Call: {part.tool_name}({part.args})"
-                        )
+                        parts.append(f"Tool Call: {part.tool_name}({part.args})")
 
         return "\n\n".join(parts)
 
@@ -91,11 +87,11 @@ class SDKAdapter:
     ) -> ModelResponse:
         """
         Convert a sequence of SDK-formatted messages into a Pydantic AI ModelResponse.
-        
+
         Parameters:
             sdk_messages (list[Any]): Messages from the Claude SDK; each item may be a dict or object with a `type` of "assistant", "result", or "tool_use". Relevant content, tool call data, and usage are extracted when present.
             model_name (str): Model name to set on the returned ModelResponse.
-        
+
         Returns:
             ModelResponse: A response containing one or more Parts (TextPart or ToolCallPart), a UTC timestamp, and usage data if available.
         """
@@ -141,16 +137,16 @@ class SDKAdapter:
             usage=usage,
         )
 
-    def _extract_assistant_content(self, msg: Any) -> Optional[str]:
+    def _extract_assistant_content(self, msg: Any) -> str | None:
         """
         Extract the assistant's textual content from an SDK-style message.
-        
+
         Parameters:
             msg (Any): Assistant message in either dict form or an object with a `content` attribute.
                 Supported shapes:
                 - dict with a string `content` or a list of blocks where blocks may be strings or dicts with `"type": "text"` and `"text"`.
                 - object with a string `content` or an iterable of block objects with `text` attributes or `type == "text"`.
-        
+
         Returns:
             str | None: Concatenated text from all text blocks separated by newlines if any text is found, otherwise `None`.
         """
@@ -183,13 +179,13 @@ class SDKAdapter:
 
         return None
 
-    def _extract_result_content(self, msg: Any) -> Optional[str]:
+    def _extract_result_content(self, msg: Any) -> str | None:
         """
         Retrieve the "result" value from a result message.
-        
+
         Parameters:
             msg (Any): A message represented as a dict or an object; for dicts the function reads the "result" key, for objects it reads the `result` attribute.
-        
+
         Returns:
             The result string from the message, or an empty string if no result is present.
         """
@@ -198,10 +194,10 @@ class SDKAdapter:
         else:
             return getattr(msg, "result", "")
 
-    def _extract_usage(self, msg: Any) -> Optional[RequestUsage]:
+    def _extract_usage(self, msg: Any) -> RequestUsage | None:
         """
         Extract token-usage data from a message that may be a dict or an object.
-        
+
         Returns:
             `RequestUsage` with `input_tokens` and `output_tokens` (missing fields default to 0) if usage information is present, `None` otherwise.
         """
@@ -224,15 +220,15 @@ class SDKAdapter:
                 output_tokens=getattr(usage_data, "output_tokens", 0),
             )
 
-    def _extract_tool_call(self, msg: Any) -> Optional[ToolCallPart]:
+    def _extract_tool_call(self, msg: Any) -> ToolCallPart | None:
         """
         Builds a ToolCallPart from an SDK tool-use message.
-        
+
         Parameters:
-        	msg (Any): Message object or dict expected to contain `name`, `input`, and `id` fields. If `name` is missing the tool name is set to "unknown"; if `input` is missing `args` defaults to an empty dict; if `id` is missing a unique tool call id is generated.
-        
+                msg (Any): Message object or dict expected to contain `name`, `input`, and `id` fields. If `name` is missing the tool name is set to "unknown"; if `input` is missing `args` defaults to an empty dict; if `id` is missing a unique tool call id is generated.
+
         Returns:
-        	ToolCallPart: A ToolCallPart constructed from the message's tool name, arguments, and tool call id.
+                ToolCallPart: A ToolCallPart constructed from the message's tool name, arguments, and tool call id.
         """
         if isinstance(msg, dict):
             return ToolCallPart(
@@ -250,7 +246,7 @@ class SDKAdapter:
     def _generate_tool_call_id(self) -> str:
         """
         Generate a unique identifier for a tool call.
-        
+
         Returns:
             tool_call_id (str): Identifier string formatted as "call_<16-hex-chars>".
         """
@@ -259,7 +255,7 @@ class SDKAdapter:
     def model_response_to_dict(self, response: ModelResponse) -> dict[str, Any]:
         """
         Convert a ModelResponse into a plain dictionary suitable for serialization.
-        
+
         Returns:
             A dictionary with keys:
               - "model_name": the response.model_name.
@@ -277,23 +273,28 @@ class SDKAdapter:
 
         for part in response.parts:
             if isinstance(part, TextPart):
-                result["parts"].append({
-                    "type": "text",
-                    "content": part.content,
-                })
+                result["parts"].append(
+                    {
+                        "type": "text",
+                        "content": part.content,
+                    }
+                )
             elif isinstance(part, ToolCallPart):
-                result["parts"].append({
-                    "type": "tool_call",
-                    "tool_name": part.tool_name,
-                    "args": part.args,
-                    "tool_call_id": part.tool_call_id,
-                })
+                result["parts"].append(
+                    {
+                        "type": "tool_call",
+                        "tool_name": part.tool_name,
+                        "args": part.args,
+                        "tool_call_id": part.tool_call_id,
+                    }
+                )
 
         if response.usage:
             result["usage"] = {
                 "input_tokens": response.usage.input_tokens,
                 "output_tokens": response.usage.output_tokens,
-                "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
+                "total_tokens": response.usage.input_tokens
+                + response.usage.output_tokens,
             }
 
         return result
@@ -306,7 +307,7 @@ _adapter = None
 def get_adapter() -> SDKAdapter:
     """
     Return the shared SDKAdapter singleton instance.
-    
+
     Returns:
         SDKAdapter: The global SDKAdapter instance, creating it on first access if necessary.
     """

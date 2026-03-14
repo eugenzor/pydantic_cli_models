@@ -1,16 +1,15 @@
 """Tests for SDK Adapter."""
 
-import pytest
 from datetime import datetime, timezone
 
 from pydantic_ai.messages import (
     ModelRequest,
     ModelResponse,
-    UserPromptPart,
     SystemPromptPart,
     TextPart,
     ToolCallPart,
     ToolReturnPart,
+    UserPromptPart,
 )
 
 from pydantic_ai_claude_code.sdk_adapter import SDKAdapter, get_adapter
@@ -23,11 +22,7 @@ class TestMessagesToPrompt:
         """Test converting user message."""
         adapter = SDKAdapter()
 
-        messages = [
-            ModelRequest(parts=[
-                UserPromptPart(content="Hello, world!")
-            ])
-        ]
+        messages = [ModelRequest(parts=[UserPromptPart(content="Hello, world!")])]
 
         prompt = adapter.messages_to_prompt(messages)
 
@@ -37,11 +32,7 @@ class TestMessagesToPrompt:
         """Test converting system message."""
         adapter = SDKAdapter()
 
-        messages = [
-            ModelRequest(parts=[
-                SystemPromptPart(content="You are helpful")
-            ])
-        ]
+        messages = [ModelRequest(parts=[SystemPromptPart(content="You are helpful")])]
 
         prompt = adapter.messages_to_prompt(messages, include_system=True)
         assert "System: You are helpful" in prompt
@@ -54,13 +45,15 @@ class TestMessagesToPrompt:
         adapter = SDKAdapter()
 
         messages = [
-            ModelRequest(parts=[
-                ToolReturnPart(
-                    tool_name="calculator",
-                    content="42",
-                    tool_call_id="call_123",
-                )
-            ])
+            ModelRequest(
+                parts=[
+                    ToolReturnPart(
+                        tool_name="calculator",
+                        content="42",
+                        tool_call_id="call_123",
+                    )
+                ]
+            )
         ]
 
         prompt = adapter.messages_to_prompt(messages)
@@ -72,10 +65,12 @@ class TestMessagesToPrompt:
         adapter = SDKAdapter()
 
         messages = [
-            ModelRequest(parts=[
-                SystemPromptPart(content="Be helpful"),
-                UserPromptPart(content="What is 2+2?"),
-            ]),
+            ModelRequest(
+                parts=[
+                    SystemPromptPart(content="Be helpful"),
+                    UserPromptPart(content="What is 2+2?"),
+                ]
+            ),
         ]
 
         prompt = adapter.messages_to_prompt(messages)
@@ -98,9 +93,7 @@ class TestSDKToModelResponse:
         """Test converting text response."""
         adapter = SDKAdapter()
 
-        sdk_messages = [
-            {"type": "result", "result": "The answer is 4"}
-        ]
+        sdk_messages = [{"type": "result", "result": "The answer is 4"}]
 
         response = adapter.sdk_to_model_response(sdk_messages)
 
@@ -118,7 +111,7 @@ class TestSDKToModelResponse:
                 "content": [
                     {"type": "text", "text": "Hello!"},
                     {"type": "text", "text": "How can I help?"},
-                ]
+                ],
             }
         ]
 
@@ -199,8 +192,7 @@ class TestSDKToModelResponse:
         adapter = SDKAdapter()
 
         response = adapter.sdk_to_model_response(
-            [{"type": "result", "result": "ok"}],
-            model_name="claude-code:sonnet"
+            [{"type": "result", "result": "ok"}], model_name="claude-code:sonnet"
         )
 
         assert response.model_name == "claude-code:sonnet"
@@ -209,9 +201,7 @@ class TestSDKToModelResponse:
         """Test that timestamp is set."""
         adapter = SDKAdapter()
 
-        response = adapter.sdk_to_model_response(
-            [{"type": "result", "result": "ok"}]
-        )
+        response = adapter.sdk_to_model_response([{"type": "result", "result": "ok"}])
 
         assert response.timestamp is not None
 

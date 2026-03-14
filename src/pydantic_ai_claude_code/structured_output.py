@@ -6,8 +6,8 @@ that the Claude Agent SDK doesn't provide. It uses directory structures
 instead of direct JSON generation for more reliable output.
 """
 
-from typing import Any
 import logging
+from typing import Any
 
 from .structure_converter import (
     build_structure_instructions,
@@ -15,7 +15,6 @@ from .structure_converter import (
 )
 from .structured.file_handler import (
     create_structured_output_path,
-    read_structured_output,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,7 +31,7 @@ class StructuredOutputHandler:
     def __init__(self):
         """
         Create a StructuredOutputHandler and initialize its internal output directory state.
-        
+
         Initializes the private `_output_dir` attribute to `None`. The attribute will be populated with the path to the current structured output directory when execute(...) is run.
         """
         self._output_dir: str | None = None
@@ -45,12 +44,12 @@ class StructuredOutputHandler:
     ) -> dict[str, Any]:
         """
         Assemble structured output by running a Claude-like agent with file-based instructions and returning the assembled result read from the filesystem.
-        
+
         Parameters:
             prompt (str): The user prompt to be appended to the generated file-based instructions.
             schema (dict[str, Any]): JSON schema describing the expected structured output layout.
             sdk_options (Any): Optional SDK options object; when present its attributes (cwd, allowed_tools, disallowed_tools, permission_mode, model) are mapped to execution settings.
-        
+
         Returns:
             dict[str, Any]: The assembled structured output parsed from the output directory.
         """
@@ -79,6 +78,7 @@ class StructuredOutputHandler:
 
             # Read assembled result
             from pathlib import Path
+
             result = read_structure_from_filesystem(
                 schema,
                 Path(self._output_dir),
@@ -93,10 +93,10 @@ class StructuredOutputHandler:
     def _sdk_options_to_settings(self, sdk_options: Any) -> dict[str, Any]:
         """
         Convert an SDK options object into a settings dictionary the handler understands.
-        
+
         Parameters:
             sdk_options (Any): An object (or namespace) that may contain any of the optional attributes `cwd`, `allowed_tools`, `disallowed_tools`, `permission_mode`, and `model`. Attributes that are present will be mapped to corresponding settings keys.
-        
+
         Returns:
             dict[str, Any]: A dictionary containing zero or more of the keys `working_directory`, `allowed_tools`, `disallowed_tools`, `permission_mode`, and `model` populated from the provided `sdk_options`.
         """
@@ -122,7 +122,7 @@ class StructuredOutputHandler:
     def get_output_directory(self) -> str | None:
         """
         Return the current output directory path.
-        
+
         Returns:
             output_dir (str | None): The path to the current output directory, or `None` if no directory has been set.
         """

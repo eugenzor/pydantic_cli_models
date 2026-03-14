@@ -86,7 +86,9 @@ def save_prompt_debug(prompt: str, settings: dict[str, Any] | None) -> None:
     logger.info("Saved prompt to: %s", filepath)
 
 
-def save_response_debug(response: dict[str, Any], settings: dict[str, Any] | None) -> None:
+def save_response_debug(
+    response: dict[str, Any], settings: dict[str, Any] | None
+) -> None:
     """
     Save a response dictionary as a timestamped JSON file in the debug directory when debug saving is enabled.
 
@@ -106,7 +108,9 @@ def save_response_debug(response: dict[str, Any], settings: dict[str, Any] | Non
     # Read counter from settings to ensure correct pairing with prompt
     counter_value = settings.get("__debug_counter", 0)
     if counter_value == 0:
-        logger.warning("No debug counter found in settings; response may not be paired with prompt")
+        logger.warning(
+            "No debug counter found in settings; response may not be paired with prompt"
+        )
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{counter_value:03d}_{timestamp}_response.json"

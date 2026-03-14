@@ -8,7 +8,6 @@ Covers:
 """
 
 import asyncio
-import json
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,7 +26,6 @@ from pydantic_ai.messages import (
 )
 from pydantic_ai.models import ModelRequestParameters
 from pydantic_ai.usage import RequestUsage
-
 
 # ======================================================================
 # response_utils.py
@@ -146,7 +144,10 @@ class TestSDKAdapterObjectFormat:
         from pydantic_ai_claude_code.sdk_adapter import SDKAdapter
 
         adapter = SDKAdapter()
-        msg = {"type": "assistant", "content": ["raw text", {"type": "text", "text": "block text"}]}
+        msg = {
+            "type": "assistant",
+            "content": ["raw text", {"type": "text", "text": "block text"}],
+        }
         result = adapter._extract_assistant_content(msg)
         assert "raw text" in result
         assert "block text" in result
@@ -338,10 +339,14 @@ class TestSDKAdapterMessagesToPrompt:
 
         adapter = SDKAdapter()
         messages = [
-            ModelRequest(parts=[
-                UserPromptPart(content="Hello"),
-                ToolReturnPart(tool_name="search", content="results", tool_call_id="t1"),
-            ])
+            ModelRequest(
+                parts=[
+                    UserPromptPart(content="Hello"),
+                    ToolReturnPart(
+                        tool_name="search", content="results", tool_call_id="t1"
+                    ),
+                ]
+            )
         ]
 
         prompt = adapter.messages_to_prompt(messages)
@@ -354,7 +359,11 @@ class TestSDKAdapterMessagesToPrompt:
         adapter = SDKAdapter()
         messages = [
             ModelResponse(
-                parts=[ToolCallPart(tool_name="search", args={"q": "test"}, tool_call_id="t1")],
+                parts=[
+                    ToolCallPart(
+                        tool_name="search", args={"q": "test"}, tool_call_id="t1"
+                    )
+                ],
                 model_name="test",
             )
         ]
@@ -363,15 +372,18 @@ class TestSDKAdapterMessagesToPrompt:
         assert "Tool Call: search" in prompt
 
     def test_skip_system_prompt(self):
-        from pydantic_ai_claude_code.sdk_adapter import SDKAdapter
         from pydantic_ai.messages import SystemPromptPart
+
+        from pydantic_ai_claude_code.sdk_adapter import SDKAdapter
 
         adapter = SDKAdapter()
         messages = [
-            ModelRequest(parts=[
-                SystemPromptPart(content="System prompt"),
-                UserPromptPart(content="Hello"),
-            ])
+            ModelRequest(
+                parts=[
+                    SystemPromptPart(content="System prompt"),
+                    UserPromptPart(content="Hello"),
+                ]
+            )
         ]
 
         prompt = adapter.messages_to_prompt(messages, include_system=False)
@@ -451,7 +463,9 @@ class TestMessagesBinaryContent:
     def test_process_tool_return_skips_when_binary_follows(self):
         from pydantic_ai_claude_code.messages import _process_tool_return_part
 
-        part = ToolReturnPart(tool_name="tool", content="text result", tool_call_id="t1")
+        part = ToolReturnPart(
+            tool_name="tool", content="text result", tool_call_id="t1"
+        )
         # Next part has binary content
         binary = BinaryContent(data=b"img", media_type="image/png")
         next_part = UserPromptPart(content=["caption", binary])
@@ -468,6 +482,7 @@ class TestMessagesCountFunctions:
 
     def test_count_request_parts(self):
         from pydantic_ai.messages import SystemPromptPart
+
         from pydantic_ai_claude_code.messages import _count_request_parts
 
         parts = [
@@ -645,9 +660,7 @@ class TestEnhancedCLITransportSetupWorkingDirectory:
         from pydantic_ai_claude_code.transport.sdk_transport import EnhancedCLITransport
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            transport = EnhancedCLITransport(
-                "test", {"__working_directory": tmpdir}
-            )
+            transport = EnhancedCLITransport("test", {"__working_directory": tmpdir})
             cwd = transport._setup_working_directory()
             assert cwd == tmpdir
 
@@ -690,10 +703,13 @@ class TestEnhancedCLITransportBuildCommand:
             "pydantic_ai_claude_code.utils_legacy.resolve_claude_cli_path",
             return_value="/usr/bin/claude",
         ):
-            transport = EnhancedCLITransport("test", {
-                "allowed_tools": ["Bash", "Read"],
-                "disallowed_tools": ["WebFetch"],
-            })
+            transport = EnhancedCLITransport(
+                "test",
+                {
+                    "allowed_tools": ["Bash", "Read"],
+                    "disallowed_tools": ["WebFetch"],
+                },
+            )
             cmd = transport._build_command()
 
             assert "--allowed-tools" in cmd
@@ -708,9 +724,12 @@ class TestEnhancedCLITransportBuildCommand:
             "pydantic_ai_claude_code.utils_legacy.resolve_claude_cli_path",
             return_value="/usr/bin/claude",
         ):
-            transport = EnhancedCLITransport("test", {
-                "extra_cli_args": ["--verbose", "--debug"],
-            })
+            transport = EnhancedCLITransport(
+                "test",
+                {
+                    "extra_cli_args": ["--verbose", "--debug"],
+                },
+            )
             cmd = transport._build_command()
 
             assert "--verbose" in cmd
@@ -723,9 +742,12 @@ class TestEnhancedCLITransportBuildCommand:
             "pydantic_ai_claude_code.utils_legacy.resolve_claude_cli_path",
             return_value="/usr/bin/claude",
         ):
-            transport = EnhancedCLITransport("test", {
-                "session_id": "sess-123",
-            })
+            transport = EnhancedCLITransport(
+                "test",
+                {
+                    "session_id": "sess-123",
+                },
+            )
             cmd = transport._build_command()
 
             assert "--session-id" in cmd
@@ -783,9 +805,7 @@ class TestEnhancedCLITransportExecuteCommand:
         mock_process.kill = mock.AsyncMock()
         mock_process.wait = mock.AsyncMock()
 
-        with mock.patch(
-            "asyncio.create_subprocess_exec", return_value=mock_process
-        ):
+        with mock.patch("asyncio.create_subprocess_exec", return_value=mock_process):
             with pytest.raises(RuntimeError, match="timeout"):
                 await transport._execute_command(["claude"], "/tmp", 1)
 
@@ -801,10 +821,10 @@ class TestEnhancedCLITransportExecuteCommand:
         )
         mock_process.returncode = 0
 
-        with mock.patch(
-            "asyncio.create_subprocess_exec", return_value=mock_process
-        ):
-            stdout, stderr, rc = await transport._execute_command(["claude"], "/tmp", 60)
+        with mock.patch("asyncio.create_subprocess_exec", return_value=mock_process):
+            stdout, stderr, rc = await transport._execute_command(
+                ["claude"], "/tmp", 60
+            )
             assert rc == 0
 
             # Verify prompt was passed

@@ -51,6 +51,13 @@ Logging:
 
 import logging
 
+# Import new modular components for convenient access
+from .core import (
+    calculate_wait_time,
+    detect_cli_infrastructure_failure,
+    detect_oauth_error,
+    detect_rate_limit,
+)
 from .exceptions import ClaudeOAuthError, SandboxNotSupportedError
 from .model import ClaudeCodeModel
 from .provider import ClaudeCodeProvider
@@ -62,22 +69,14 @@ from .provider_presets import (
     load_all_presets,
 )
 from .registration import register_claude_code_model
-from .tools import MCPTool
-from .types import ClaudeCodeSettings
-
-# Import new modular components for convenient access
-from .core import (
-    detect_oauth_error,
-    detect_rate_limit,
-    calculate_wait_time,
-    detect_cli_infrastructure_failure,
-)
 from .structured import (
-    write_structure_to_filesystem,
-    read_structure_from_filesystem,
     build_structure_instructions,
+    read_structure_from_filesystem,
+    write_structure_to_filesystem,
 )
+from .tools import MCPTool
 from .transport import EnhancedCLITransport, convert_settings_to_sdk_options
+from .types import ClaudeCodeSettings
 
 # Configure module-level logger
 logger = logging.getLogger(__name__)

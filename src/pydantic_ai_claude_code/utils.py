@@ -12,65 +12,65 @@ For new code, use:
 """
 
 # Re-export from new utils modules
-from ._utils.json_utils import strip_markdown_code_fence, extract_json_from_text
-from ._utils.type_utils import convert_primitive_value, get_type_description
-from ._utils.file_utils import get_next_call_subdirectory, copy_additional_files
 from ._utils import clean_subprocess_env
+from ._utils.file_utils import copy_additional_files, get_next_call_subdirectory
+from ._utils.json_utils import extract_json_from_text, strip_markdown_code_fence
+from ._utils.type_utils import convert_primitive_value, get_type_description
+from .core.debug_saver import (
+    get_debug_dir,
+    save_prompt_debug,
+    save_raw_response_to_working_dir,
+    save_response_debug,
+)
 
 # Re-export from core modules
 from .core.oauth_handler import detect_oauth_error
 from .core.retry_logic import (
-    detect_rate_limit,
     calculate_wait_time,
     detect_cli_infrastructure_failure,
+    detect_rate_limit,
 )
 from .core.sandbox_runtime import (
-    resolve_sandbox_runtime_path,
     build_sandbox_config,
+    resolve_sandbox_runtime_path,
     wrap_command_with_sandbox,
-)
-from .core.debug_saver import (
-    get_debug_dir,
-    save_prompt_debug,
-    save_response_debug,
-    save_raw_response_to_working_dir,
 )
 
 # Keep imports from legacy for functions not yet refactored
 from .utils_legacy import (
-    # CLI path resolution
-    resolve_claude_cli_path,
-    # Command building
-    build_claude_command,
-    # Subprocess helpers
-    create_subprocess_async,
-    # Working directory management
-    _determine_working_directory,
-    _setup_working_directory_and_prompt,
-    _log_prompt_info,
-    # Command execution
-    _execute_sync_command,
-    _execute_async_command,
-    # Response handling
-    _parse_json_response,
-    _validate_claude_response,
-    _process_successful_response,
-    # Error handling
-    _format_cli_error_message,
-    _check_rate_limit,
-    _handle_command_failure,
-    _classify_execution_error,
-    # Main execution functions
-    run_claude_sync,
-    run_claude_async,
-    _try_sync_execution_with_rate_limit_retry,
-    _try_async_execution_with_rate_limit_retry,
-    # Streaming
-    parse_stream_json_line,
     # Constants
     LONG_RUNTIME_THRESHOLD_SECONDS,
     MAX_CLI_RETRIES,
     RETRY_BACKOFF_BASE,
+    _check_rate_limit,
+    _classify_execution_error,
+    # Working directory management
+    _determine_working_directory,
+    _execute_async_command,
+    # Command execution
+    _execute_sync_command,
+    # Error handling
+    _format_cli_error_message,
+    _handle_command_failure,
+    _log_prompt_info,
+    # Response handling
+    _parse_json_response,
+    _process_successful_response,
+    _setup_working_directory_and_prompt,
+    _try_async_execution_with_rate_limit_retry,
+    _try_sync_execution_with_rate_limit_retry,
+    _validate_claude_response,
+    # Command building
+    build_claude_command,
+    # Subprocess helpers
+    create_subprocess_async,
+    # Streaming
+    parse_stream_json_line,
+    # CLI path resolution
+    resolve_claude_cli_path,
+    run_claude_async,
+    # Main execution functions
+    run_claude_sync,
 )
 
 # Re-export debug functions with original names (for backward compat)
@@ -350,7 +350,9 @@ def resolve_sandbox_runtime_path(settings: ClaudeCodeSettings | None = None) -> 
     # Priority 2: Environment variable
     env_path = os.environ.get("SANDBOX_RUNTIME_PATH")
     if env_path:
-        logger.debug("Using sandbox-runtime from SANDBOX_RUNTIME_PATH env var: %s", env_path)
+        logger.debug(
+            "Using sandbox-runtime from SANDBOX_RUNTIME_PATH env var: %s", env_path
+        )
         return env_path
 
     # Priority 3: Auto-resolve from PATH
@@ -453,8 +455,8 @@ def detect_sandbox_failure(stderr: str) -> bool:
         True if error indicates sandbox/bwrap failure
     """
     sandbox_indicators = [
-        "bwrap:",                  # Any bubblewrap error
-        "Failed RTM_NEWADDR",      # Network namespace creation failed
+        "bwrap:",  # Any bubblewrap error
+        "Failed RTM_NEWADDR",  # Network namespace creation failed
         "Operation not permitted",  # General permission denial (with bwrap context)
     ]
     # Require "bwrap" to be present to avoid false positives on generic "Operation not permitted"
@@ -676,7 +678,7 @@ def build_claude_command(
         # Write config to temp file
         config_fd, config_path = tempfile.mkstemp(suffix=".json", prefix="srt_config_")
         try:
-            with os.fdopen(config_fd, 'w') as f:
+            with os.fdopen(config_fd, "w") as f:
                 json.dump(config, f)
 
             # Redirect Claude config/debug to a secure temp dir to avoid ~/.claude/ writes
@@ -690,7 +692,9 @@ def build_claude_command(
             settings_file = home_claude_dir / "settings.json"
 
             if credentials_file.exists():
-                shutil.copy2(credentials_file, Path(claude_config_dir) / ".credentials.json")
+                shutil.copy2(
+                    credentials_file, Path(claude_config_dir) / ".credentials.json"
+                )
                 logger.debug("Copied credentials to sandbox config dir")
 
             if settings_file.exists():
@@ -701,7 +705,8 @@ def build_claude_command(
             # Environment variables (IS_SANDBOX=1, CLAUDE_CONFIG_DIR) will be set via subprocess env parameter
             wrapped_cmd = [
                 srt_path,
-                "--settings", config_path,
+                "--settings",
+                config_path,
                 "--",
             ] + cmd
 
@@ -712,7 +717,10 @@ def build_claude_command(
                     "CLAUDE_CONFIG_DIR": claude_config_dir,
                 }
 
-            logger.info("Wrapped Claude command with sandbox (IS_SANDBOX=1, CLAUDE_CONFIG_DIR=%s)", claude_config_dir)
+            logger.info(
+                "Wrapped Claude command with sandbox (IS_SANDBOX=1, CLAUDE_CONFIG_DIR=%s)",
+                claude_config_dir,
+            )
             logger.debug("Full sandboxed command: %s", " ".join(wrapped_cmd))
             return wrapped_cmd
         except Exception:
@@ -737,7 +745,9 @@ def _get_next_call_subdirectory(base_dir: str) -> Path:
         Path to numbered subdirectory (e.g., base_dir/1/, base_dir/2/, etc.)
     """
     base_path = Path(base_dir)
-    existing_subdirs = [d for d in base_path.iterdir() if d.is_dir() and d.name.isdigit()]
+    existing_subdirs = [
+        d for d in base_path.iterdir() if d.is_dir() and d.name.isdigit()
+    ]
     next_num = len(existing_subdirs) + 1
 
     subdir = base_path / str(next_num)
@@ -803,7 +813,9 @@ def _determine_working_directory(settings: ClaudeCodeSettings | None) -> str:
     else:
         # User-specified directory - will create numbered subdirectory later
         Path(base_dir).mkdir(parents=True, exist_ok=True)
-        existing_subdirs = [d for d in Path(base_dir).iterdir() if d.is_dir() and d.name.isdigit()]
+        existing_subdirs = [
+            d for d in Path(base_dir).iterdir() if d.is_dir() and d.name.isdigit()
+        ]
         next_num = len(existing_subdirs) + 1
         return str(Path(base_dir) / str(next_num))
 
@@ -848,7 +860,9 @@ def _setup_working_directory_and_prompt(
         if not base_dir:
             # No working directory specified - create temp directory for this session
             # Check if we already created a temp base directory for these settings
-            existing_temp_base = settings.get("__temp_base_directory") if settings else None
+            existing_temp_base = (
+                settings.get("__temp_base_directory") if settings else None
+            )
 
             if not existing_temp_base:
                 # First call with these settings - create new temp base directory
@@ -889,7 +903,10 @@ def _setup_working_directory_and_prompt(
 
 
 def _execute_sync_command(
-    cmd: list[str], cwd: str, timeout_seconds: int, settings: ClaudeCodeSettings | None = None
+    cmd: list[str],
+    cwd: str,
+    timeout_seconds: int,
+    settings: ClaudeCodeSettings | None = None,
 ) -> subprocess.CompletedProcess[str]:
     """Execute command synchronously with timeout.
 
@@ -911,7 +928,9 @@ def _execute_sync_command(
     extra_env: dict[str, str] = {}
     if settings and settings.get("__provider_env"):
         extra_env.update(settings["__provider_env"])
-        logger.debug("Using provider environment: %s", list(settings["__provider_env"].keys()))
+        logger.debug(
+            "Using provider environment: %s", list(settings["__provider_env"].keys())
+        )
     if settings and settings.get("__sandbox_env"):
         extra_env.update(settings["__sandbox_env"])
         logger.debug("Using sandbox environment: %s", settings["__sandbox_env"])
@@ -971,7 +990,9 @@ def _check_rate_limit(
         if is_rate_limited and reset_time:
             wait_seconds = calculate_wait_time(reset_time)
             wait_minutes = wait_seconds // 60
-            logger.info("Rate limit hit. Waiting %d minutes until reset...", wait_minutes)
+            logger.info(
+                "Rate limit hit. Waiting %d minutes until reset...", wait_minutes
+            )
             return True, wait_seconds
 
     return False, 0
@@ -1038,9 +1059,9 @@ def _parse_json_response(raw_stdout: str) -> ClaudeJSONResponse:
     # srt outputs "Running: <command>" on first line before actual JSON
     if raw_stdout.startswith("Running: "):
         # Skip first line
-        first_newline = raw_stdout.find('\n')
+        first_newline = raw_stdout.find("\n")
         if first_newline > 0:
-            raw_stdout = raw_stdout[first_newline + 1:]
+            raw_stdout = raw_stdout[first_newline + 1 :]
             logger.debug("Stripped srt diagnostic line from stdout")
 
     raw_response = json.loads(raw_stdout)
@@ -1119,7 +1140,9 @@ def _classify_execution_error(
     if is_oauth_error and oauth_message:
         raise ClaudeOAuthError(
             f"Claude CLI authentication expired after {elapsed:.1f}s: {oauth_message}",
-            reauth_instruction=oauth_message if "/login" in oauth_message else "Please run /login"
+            reauth_instruction=oauth_message
+            if "/login" in oauth_message
+            else "Please run /login",
         )
 
     # Priority 2: Check sandbox (bwrap) failures - non-retryable, needs fallback
@@ -1129,7 +1152,9 @@ def _classify_execution_error(
         )
 
     # Priority 3: Check rate limit (less specific, could have false positives)
-    should_retry, wait_seconds = _check_rate_limit(stdout_text, stderr_text, returncode, retry_enabled)
+    should_retry, wait_seconds = _check_rate_limit(
+        stdout_text, stderr_text, returncode, retry_enabled
+    )
     if should_retry:
         return ("retry_rate_limit", wait_seconds)
 
@@ -1245,7 +1270,7 @@ def run_claude_sync(
 
             # Infrastructure failure detected
             if should_retry_infra and attempt < MAX_CLI_RETRIES - 1:
-                backoff_seconds = RETRY_BACKOFF_BASE ** attempt
+                backoff_seconds = RETRY_BACKOFF_BASE**attempt
                 logger.warning(
                     "Claude CLI infrastructure failure detected (attempt %d/%d). "
                     "Retrying in %d seconds...",
@@ -1282,7 +1307,7 @@ def run_claude_sync(
             # Check if the error is due to infrastructure failure
             error_str = str(e)
             if detect_cli_infrastructure_failure(error_str):
-                backoff_seconds = RETRY_BACKOFF_BASE ** attempt
+                backoff_seconds = RETRY_BACKOFF_BASE**attempt
                 logger.warning(
                     "Claude CLI infrastructure failure in execution (attempt %d/%d). "
                     "Retrying in %d seconds...",
@@ -1300,7 +1325,10 @@ def run_claude_sync(
 
 
 async def _execute_async_command(
-    cmd: list[str], cwd: str, timeout_seconds: int, settings: ClaudeCodeSettings | None = None
+    cmd: list[str],
+    cwd: str,
+    timeout_seconds: int,
+    settings: ClaudeCodeSettings | None = None,
 ) -> tuple[bytes, bytes, int]:
     """Execute command asynchronously with timeout.
 
@@ -1323,7 +1351,9 @@ async def _execute_async_command(
     extra_env: dict[str, str] = {}
     if settings and settings.get("__provider_env"):
         extra_env.update(settings["__provider_env"])
-        logger.debug("Using provider environment: %s", list(settings["__provider_env"].keys()))
+        logger.debug(
+            "Using provider environment: %s", list(settings["__provider_env"].keys())
+        )
     if settings and settings.get("__sandbox_env"):
         extra_env.update(settings["__sandbox_env"])
         logger.debug("Using sandbox environment: %s", settings["__sandbox_env"])
@@ -1335,8 +1365,10 @@ async def _execute_async_command(
         # Get prompt from settings to pass via stdin (avoids quoting issues with srt)
         prompt_input = None
         if settings and settings.get("__prompt_text"):
-            prompt_input = settings["__prompt_text"].encode('utf-8')
-            logger.debug("Passing prompt via stdin (%d chars)", len(settings["__prompt_text"]))
+            prompt_input = settings["__prompt_text"].encode("utf-8")
+            logger.debug(
+                "Passing prompt via stdin (%d chars)", len(settings["__prompt_text"])
+            )
 
         stdout, stderr = await asyncio.wait_for(
             process.communicate(input=prompt_input),
@@ -1381,7 +1413,9 @@ async def _try_async_execution_with_rate_limit_retry(
     """
     while True:
         start_time = time.time()
-        process_output = await _execute_async_command(cmd, cwd, timeout_seconds, settings)
+        process_output = await _execute_async_command(
+            cmd, cwd, timeout_seconds, settings
+        )
         elapsed = time.time() - start_time
         stdout, stderr, returncode = process_output
 
@@ -1437,7 +1471,10 @@ async def run_claude_async(
     # Outer retry loop for infrastructure failures
     for attempt in range(MAX_CLI_RETRIES):
         try:
-            response, should_retry_infra = await _try_async_execution_with_rate_limit_retry(
+            (
+                response,
+                should_retry_infra,
+            ) = await _try_async_execution_with_rate_limit_retry(
                 cmd, cwd, timeout_seconds, retry_enabled, settings
             )
             if response:
@@ -1446,7 +1483,7 @@ async def run_claude_async(
 
             # Infrastructure failure detected
             if should_retry_infra and attempt < MAX_CLI_RETRIES - 1:
-                backoff_seconds = RETRY_BACKOFF_BASE ** attempt
+                backoff_seconds = RETRY_BACKOFF_BASE**attempt
                 logger.warning(
                     "Claude CLI infrastructure failure detected (attempt %d/%d). "
                     "Retrying in %d seconds...",
@@ -1483,7 +1520,7 @@ async def run_claude_async(
             # Check if the error is due to infrastructure failure
             error_str = str(e)
             if detect_cli_infrastructure_failure(error_str):
-                backoff_seconds = RETRY_BACKOFF_BASE ** attempt
+                backoff_seconds = RETRY_BACKOFF_BASE**attempt
                 logger.warning(
                     "Claude CLI infrastructure failure in execution (attempt %d/%d). "
                     "Retrying in %d seconds...",
@@ -1574,7 +1611,9 @@ def _save_prompt_debug(prompt: str, settings: ClaudeCodeSettings | None) -> None
     logger.info("Saved prompt to: %s", filepath)
 
 
-def _save_response_debug(response: ClaudeJSONResponse, settings: ClaudeCodeSettings | None) -> None:
+def _save_response_debug(
+    response: ClaudeJSONResponse, settings: ClaudeCodeSettings | None
+) -> None:
     """Save response to debug file if enabled.
 
     Args:

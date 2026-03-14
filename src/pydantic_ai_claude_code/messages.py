@@ -40,12 +40,12 @@ def _create_binary_content_file(
         extension = binary_content.format
     except ValueError:
         # If format lookup fails, extract from media_type
-        extension = binary_content.media_type.split('/')[-1].split(';')[0]
+        extension = binary_content.media_type.split("/")[-1].split(";")[0]
 
     # Use identifier if provided, otherwise use counter
     base_name = binary_content.identifier or f"file_{counter}"
     # Sanitize identifier to be filename-safe
-    safe_name = "".join(c if c.isalnum() or c in ('-', '_') else '_' for c in base_name)
+    safe_name = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in base_name)
     filename = f"{safe_name}.{extension}"
     file_path = Path(working_dir) / filename
 
@@ -62,7 +62,7 @@ def _create_binary_content_file(
         "Wrote binary content (%s) to %s (%d bytes)",
         binary_content.media_type,
         file_path,
-        len(binary_content.data)
+        len(binary_content.data),
     )
 
     return prompt_reference
@@ -100,7 +100,7 @@ def _create_tool_result_file(
         "Wrote tool result from %s to %s (%d bytes)",
         tool_name,
         file_path,
-        len(str(content))
+        len(str(content)),
     )
 
     return prompt_reference
@@ -162,7 +162,7 @@ def _process_tool_return_part(
         "Processing ToolReturnPart: tool_name=%s, content_type=%s, content=%s",
         req_part.tool_name,
         type(req_part.content).__name__,
-        str(req_part.content)[:100] if req_part.content else None
+        str(req_part.content)[:100] if req_part.content else None,
     )
 
     # Check if tool returned BinaryContent
@@ -176,14 +176,20 @@ def _process_tool_return_part(
 
     # Look ahead for UserPromptPart with BinaryContent
     has_binary_next = False
-    if next_part and isinstance(next_part, UserPromptPart) and not isinstance(next_part.content, str):
+    if (
+        next_part
+        and isinstance(next_part, UserPromptPart)
+        and not isinstance(next_part.content, str)
+    ):
         for content_item in next_part.content:
             if isinstance(content_item, BinaryContent):
                 has_binary_next = True
                 break
 
     if has_binary_next:
-        logger.debug("Skipping ToolReturnPart text - binary content follows in next UserPromptPart")
+        logger.debug(
+            "Skipping ToolReturnPart text - binary content follows in next UserPromptPart"
+        )
         return None, tool_result_counter, binary_content_counter
 
     # Regular text/data result
@@ -233,8 +239,14 @@ def _process_request_parts(
 
         elif isinstance(req_part, ToolReturnPart):
             next_part = parts_list[i + 1] if i + 1 < len(parts_list) else None
-            maybe_prompt, tool_result_counter, binary_content_counter = _process_tool_return_part(
-                req_part, next_part, tool_result_counter, binary_content_counter, working_dir
+            maybe_prompt, tool_result_counter, binary_content_counter = (
+                _process_tool_return_part(
+                    req_part,
+                    next_part,
+                    tool_result_counter,
+                    binary_content_counter,
+                    working_dir,
+                )
             )
             if maybe_prompt is not None:
                 parts.append(maybe_prompt)
@@ -293,8 +305,14 @@ def format_messages_for_claude(
     for msg_idx, message in enumerate(messages):
         logger.debug("Message %d: type=%s", msg_idx, type(message).__name__)
         if isinstance(message, ModelRequest):
-            msg_parts, tool_result_counter, binary_content_counter = _process_request_parts(
-                message.parts, skip_system_prompt, tool_result_counter, binary_content_counter, working_dir
+            msg_parts, tool_result_counter, binary_content_counter = (
+                _process_request_parts(
+                    message.parts,
+                    skip_system_prompt,
+                    tool_result_counter,
+                    binary_content_counter,
+                    working_dir,
+                )
             )
             all_parts.extend(msg_parts)
         elif isinstance(message, ModelResponse):

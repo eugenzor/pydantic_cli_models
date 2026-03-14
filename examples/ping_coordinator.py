@@ -18,10 +18,8 @@ The coordinator:
 import asyncio
 import json
 import os
-import signal
 import sys
 import tempfile
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -52,15 +50,17 @@ class CoordinationState:
 
     def _ensure_state(self) -> None:
         if not self.state_file.exists():
-            self._write({
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "ping_count": 0,
-                "task_status": "idle",
-                "last_ping": None,
-                "agents_active": [],
-                "messages": [],
-                "task_log": [],
-            })
+            self._write(
+                {
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "ping_count": 0,
+                    "task_status": "idle",
+                    "last_ping": None,
+                    "agents_active": [],
+                    "messages": [],
+                    "task_log": [],
+                }
+            )
 
     def _read(self) -> dict[str, Any]:
         try:
@@ -78,12 +78,14 @@ class CoordinationState:
         state["last_ping"] = datetime.now(timezone.utc).isoformat()
         if agent_name not in state["agents_active"]:
             state["agents_active"].append(agent_name)
-        state["messages"].append({
-            "agent": agent_name,
-            "time": datetime.now(timezone.utc).isoformat(),
-            "message": message,
-            "cycle": state["ping_count"],
-        })
+        state["messages"].append(
+            {
+                "agent": agent_name,
+                "time": datetime.now(timezone.utc).isoformat(),
+                "message": message,
+                "cycle": state["ping_count"],
+            }
+        )
         # Keep only last 20 messages
         state["messages"] = state["messages"][-20:]
         self._write(state)
@@ -92,11 +94,13 @@ class CoordinationState:
     def update_task_status(self, status: str, detail: str = "") -> None:
         state = self._read()
         state["task_status"] = status
-        state["task_log"].append({
-            "time": datetime.now(timezone.utc).isoformat(),
-            "status": status,
-            "detail": detail,
-        })
+        state["task_log"].append(
+            {
+                "time": datetime.now(timezone.utc).isoformat(),
+                "status": status,
+                "detail": detail,
+            }
+        )
         state["task_log"] = state["task_log"][-50:]
         self._write(state)
 
@@ -244,7 +248,7 @@ async def main():
     print("  Agent Ping Coordination System")
     print("=" * 60)
     print(f"  State file: {COORD_STATE_FILE}")
-    print(f"  Ping interval: 30s")
+    print("  Ping interval: 30s")
     print(f"  OpenAI key: ...{api_key[-8:]}")
     print("=" * 60)
 

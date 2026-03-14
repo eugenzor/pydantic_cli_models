@@ -48,26 +48,33 @@ async def test_streaming_delivers_chunks_incrementally():
             chunk_timestamps.append(get_timestamp_ms())
 
     # Verify we got multiple chunks
-    assert chunk_count >= MIN_CHUNKS_FOR_STREAMING, f"Expected at least {MIN_CHUNKS_FOR_STREAMING} chunks, got {chunk_count}"
+    assert chunk_count >= MIN_CHUNKS_FOR_STREAMING, (
+        f"Expected at least {MIN_CHUNKS_FOR_STREAMING} chunks, got {chunk_count}"
+    )
 
     # Verify first chunk arrived quickly after entering context
     time_to_first_chunk = chunk_timestamps[0] - context_entered_at
-    assert (
-        time_to_first_chunk < MAX_TIME_TO_FIRST_CHUNK_MS
-    ), f"First chunk took {time_to_first_chunk}ms (expected < {MAX_TIME_TO_FIRST_CHUNK_MS}ms)"
+    assert time_to_first_chunk < MAX_TIME_TO_FIRST_CHUNK_MS, (
+        f"First chunk took {time_to_first_chunk}ms (expected < {MAX_TIME_TO_FIRST_CHUNK_MS}ms)"
+    )
 
     # Verify chunks arrived over time (not all at once)
     # If chunks were instant, all timestamps would be within a few ms
     # Real streaming should have delays between chunks
     time_span = chunk_timestamps[-1] - chunk_timestamps[0]
-    assert time_span > MIN_STREAMING_TIMESPAN_MS, f"Chunks arrived in {time_span}ms (expected > {MIN_STREAMING_TIMESPAN_MS}ms for true streaming)"
+    assert time_span > MIN_STREAMING_TIMESPAN_MS, (
+        f"Chunks arrived in {time_span}ms (expected > {MIN_STREAMING_TIMESPAN_MS}ms for true streaming)"
+    )
 
     # Verify there are gaps between some chunks (not instant delivery)
-    gaps = [chunk_timestamps[i + 1] - chunk_timestamps[i] for i in range(len(chunk_timestamps) - 1)]
+    gaps = [
+        chunk_timestamps[i + 1] - chunk_timestamps[i]
+        for i in range(len(chunk_timestamps) - 1)
+    ]
     significant_gaps = [g for g in gaps if g > MIN_CHUNK_GAP_MS]
-    assert (
-        len(significant_gaps) >= MIN_SIGNIFICANT_GAPS
-    ), f"Expected multiple gaps >{MIN_CHUNK_GAP_MS}ms between chunks, found {len(significant_gaps)}"
+    assert len(significant_gaps) >= MIN_SIGNIFICANT_GAPS, (
+        f"Expected multiple gaps >{MIN_CHUNK_GAP_MS}ms between chunks, found {len(significant_gaps)}"
+    )
 
 
 @pytest.mark.asyncio
@@ -83,7 +90,9 @@ async def test_streaming_filters_tool_use_messages():
             full_text = text
 
     # Main check: internal file references shouldn't leak into user-facing response
-    assert "prompt.md" not in full_text.lower(), "Internal file references should be filtered out"
+    assert "prompt.md" not in full_text.lower(), (
+        "Internal file references should be filtered out"
+    )
 
     # Verify we got actual content
     assert len(full_text) > 50, "Should have received substantial response content"
@@ -101,12 +110,14 @@ async def test_streaming_delivers_complete_response():
             chunks.append(text)
 
     # Verify we got multiple chunks
-    assert len(chunks) >= MIN_CHUNKS_EXPECTED, f"Expected multiple chunks, got {len(chunks)}"
+    assert len(chunks) >= MIN_CHUNKS_EXPECTED, (
+        f"Expected multiple chunks, got {len(chunks)}"
+    )
 
     # Verify each chunk is cumulative (each chunk contains previous text)
     for i in range(1, len(chunks)):
         assert len(chunks[i]) >= len(chunks[i - 1]), (
-            f"Chunk {i} should be >= chunk {i-1} (cumulative)"
+            f"Chunk {i} should be >= chunk {i - 1} (cumulative)"
         )
         assert chunks[i].startswith(chunks[i - 1][:MIN_SUBSTANTIAL_CONTENT_LENGTH]), (
             f"Chunk {i} should start with previous chunk content"
@@ -114,7 +125,9 @@ async def test_streaming_delivers_complete_response():
 
     # Verify final response contains expected content indicators
     final_text = chunks[-1]
-    assert len(final_text) > MIN_SUBSTANTIAL_CONTENT_LENGTH, "Should have substantial content"
+    assert len(final_text) > MIN_SUBSTANTIAL_CONTENT_LENGTH, (
+        "Should have substantial content"
+    )
 
 
 @pytest.mark.asyncio

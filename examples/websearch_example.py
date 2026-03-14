@@ -27,8 +27,7 @@ async def main() -> None:
     print("=" * 60)
 
     agent = Agent(
-        "claude-code:sonnet",
-        builtin_tools=[WebSearchTool(search_context_size="high")]
+        "claude-code:sonnet", builtin_tools=[WebSearchTool(search_context_size="high")]
     )
 
     result = await agent.run(
@@ -50,9 +49,7 @@ async def main() -> None:
         ],
     )
 
-    result = await agent.run(
-        "What is Pydantic AI? Search for information about it."
-    )
+    result = await agent.run("What is Pydantic AI? Search for information about it.")
     print(f"Response:\n{result.output}")
 
     # Example 4: Limited searches with max_uses

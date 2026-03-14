@@ -39,7 +39,9 @@ def main() -> None:
     print("Example 2: Temporary Workspace")
     print("-" * 50)
 
-    with ClaudeCodeProvider(settings=ClaudeCodeSettings(use_temp_workspace=True)) as temp_provider:
+    with ClaudeCodeProvider(
+        settings=ClaudeCodeSettings(use_temp_workspace=True)
+    ) as temp_provider:
         model = ClaudeCodeModel("sonnet", provider=temp_provider)
         agent = Agent(model)
 

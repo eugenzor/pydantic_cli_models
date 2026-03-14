@@ -56,7 +56,9 @@ async def run_claude_streaming(
                 yield nested_event
             else:
                 if event.get("type"):
-                    logger.debug("Streaming event #%d: type=%s", event_count, event["type"])
+                    logger.debug(
+                        "Streaming event #%d: type=%s", event_count, event["type"]
+                    )
                 yield event
         except json.JSONDecodeError as e:
             # Skip invalid JSON lines

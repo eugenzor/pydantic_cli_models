@@ -19,7 +19,9 @@ def generate_output_file_path(working_dir: str, prefix: str, extension: str) -> 
     return str(Path(working_dir) / f"{prefix}_{unique_id}{extension}")
 
 
-def generate_temp_directory_path(working_dir: str, prefix: str, short_id: bool = True) -> str:
+def generate_temp_directory_path(
+    working_dir: str, prefix: str, short_id: bool = True
+) -> str:
     """Generate a unique temporary directory path.
 
     Args:

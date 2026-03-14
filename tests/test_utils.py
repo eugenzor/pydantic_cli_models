@@ -193,8 +193,10 @@ def test_build_claude_command_with_multiple_extra_args():
         "model": "sonnet",
         "extra_cli_args": [
             "--verbose",
-            "--add-dir", "/custom/path",
-            "--agents", '{"reviewer": {"description": "Reviews code"}}',
+            "--add-dir",
+            "/custom/path",
+            "--agents",
+            '{"reviewer": {"description": "Reviews code"}}',
         ],
     }
 
@@ -263,7 +265,9 @@ def test_detect_oauth_error_login_required():
 
 def test_detect_oauth_error_no_error():
     """Test that successful responses are not detected as OAuth errors."""
-    stdout = '{"type":"result","subtype":"success","is_error":false,"result":"Success!"}'
+    stdout = (
+        '{"type":"result","subtype":"success","is_error":false,"result":"Success!"}'
+    )
     stderr = ""
 
     is_oauth_error, message = detect_oauth_error(stdout, stderr)
@@ -335,7 +339,7 @@ def test_oauth_error_exception_attributes():
     """Test ClaudeOAuthError exception attributes."""
     error = ClaudeOAuthError(
         "OAuth token revoked · Please run /login",
-        reauth_instruction="Please run /login"
+        reauth_instruction="Please run /login",
     )
 
     assert str(error) == "OAuth token revoked · Please run /login"
@@ -380,6 +384,7 @@ def test_detect_oauth_error_takes_priority_over_rate_limit_pattern():
 
     # Rate limit detection should also find the pattern
     from pydantic_ai_claude_code.utils import detect_rate_limit
+
     is_rate_limited, reset_time = detect_rate_limit(stdout)
     assert is_rate_limited is True
 
@@ -396,7 +401,9 @@ def test_detect_oauth_error_vs_rate_limit_priority():
     assert is_oauth is True
 
     # Scenario 2: Only rate limit
-    stdout_rate_limit_only = '{"type":"result","is_error":true,"result":"5-hour limit reached ∙ resets 3PM"}'
+    stdout_rate_limit_only = (
+        '{"type":"result","is_error":true,"result":"5-hour limit reached ∙ resets 3PM"}'
+    )
     is_oauth, _ = detect_oauth_error(stdout_rate_limit_only, "")
     assert is_oauth is False  # Should NOT be detected as OAuth
 

@@ -35,7 +35,6 @@ from pydantic_ai.models import (
 from pydantic_ai.settings import ModelSettings
 from pydantic_ai.usage import RequestUsage
 
-from ._sdk.types import ClaudeAgentOptions, HookConfig
 from .messages import format_messages_for_claude
 from .provider_presets import (
     ProviderPreset,
@@ -98,6 +97,7 @@ class ClaudeCodeModel(Model):
         *,
         provider_preset: str | None = None,
         cli_path: str | None = None,
+        default_settings: dict[str, Any] | None = None,
     ):
         """Initialize Claude Code model.
 
@@ -106,10 +106,12 @@ class ClaudeCodeModel(Model):
                 or full model name like "claude-sonnet-4-5-20250929")
             provider_preset: Optional preset ID (deepseek, kimi, etc.)
             cli_path: Optional path to Claude CLI binary
+            default_settings: Optional dict of default settings applied to every request
         """
         self._model_alias = model_name
         self._provider_preset_id = provider_preset
         self._cli_path = cli_path
+        self._default_settings: dict[str, Any] = default_settings or {}
         self._actual_model_name: str = model_name
         self._preset_env_vars: dict[str, str] = {}
         self._provider_preset: ProviderPreset | None = None
@@ -124,7 +126,9 @@ class ClaudeCodeModel(Model):
                     override_existing=False,
                 )
                 # Get actual model name from preset
-                self._actual_model_name = self._provider_preset.get_model_name(model_name)
+                self._actual_model_name = self._provider_preset.get_model_name(
+                    model_name
+                )
                 logger.info(
                     "Loaded provider preset '%s' with %d environment variables, model: %s",
                     provider_preset,
@@ -196,6 +200,9 @@ class ClaudeCodeModel(Model):
         settings["timeout_seconds"] = 900
         settings["use_sandbox_runtime"] = True
 
+        # 1b. Apply provider/model default_settings (overrides hardcoded defaults)
+        settings.update(self._default_settings)
+
         # 2. Agent-level config (from model_request_parameters)
         if model_request_parameters.function_tools:
             # Register function tools as allowed
@@ -215,7 +222,9 @@ class ClaudeCodeModel(Model):
             if "debug_save_prompts" in model_settings:
                 settings["debug_save_prompts"] = model_settings["debug_save_prompts"]
             if "append_system_prompt" in model_settings:
-                settings["append_system_prompt"] = model_settings["append_system_prompt"]
+                settings["append_system_prompt"] = model_settings[
+                    "append_system_prompt"
+                ]
             if "verbose" in model_settings:
                 settings["verbose"] = model_settings["verbose"]
 
@@ -467,9 +476,7 @@ CHOICE: none
         if not is_streaming:
             should_add_output_instructions = False
 
-            if has_tool_results:
-                should_add_output_instructions = True
-            elif not function_tools:
+            if has_tool_results or not function_tools:
                 should_add_output_instructions = True
 
             if should_add_output_instructions:
@@ -641,9 +648,7 @@ CHOICE: none
                 "Streaming is not supported with structured output (output_tools)."
             )
         if function_tools:
-            raise ValueError(
-                "Streaming is not supported with function tools."
-            )
+            raise ValueError("Streaming is not supported with function tools.")
 
         # Check if we have tool results
         has_tool_results = self._check_has_tool_results(messages)
@@ -926,7 +931,9 @@ Use the Read tool to read `user_request.md` for the user's request.
         )
 
         system_prompt_parts = []
-        if model_request_parameters and hasattr(model_request_parameters, "system_prompt"):
+        if model_request_parameters and hasattr(
+            model_request_parameters, "system_prompt"
+        ):
             sp = getattr(model_request_parameters, "system_prompt", None)
             if sp:
                 system_prompt_parts.append(sp)
@@ -967,7 +974,9 @@ Use the Read tool to read `user_request.md` for the user's request.
         self._prepare_working_directory(settings)
 
         system_prompt_parts = []
-        if model_request_parameters and hasattr(model_request_parameters, "system_prompt"):
+        if model_request_parameters and hasattr(
+            model_request_parameters, "system_prompt"
+        ):
             sp = getattr(model_request_parameters, "system_prompt", None)
             if sp:
                 system_prompt_parts.append(sp)
@@ -1074,7 +1083,9 @@ Use the Read tool to read `user_request.md` for the user's request.
                     )
 
         result_text = arg_response.get("result", "")
-        error_msg = f"Could not interpret the parameters from response: {result_text[:500]}"
+        error_msg = (
+            f"Could not interpret the parameters from response: {result_text[:500]}"
+        )
         return self._create_model_response_with_usage(
             arg_response, [TextPart(content=error_msg)]
         )
@@ -1195,17 +1206,9 @@ Please fix the issues above and try again. Follow the directory structure instru
                 actual_value = data[field_name]
 
                 type_valid = True
-                if expected_type == "string" and not isinstance(actual_value, str):
-                    type_valid = False
-                elif expected_type == "integer" and not isinstance(actual_value, int):
-                    type_valid = False
-                elif expected_type == "number" and not isinstance(actual_value, (int, float)):
-                    type_valid = False
-                elif expected_type == "boolean" and not isinstance(actual_value, bool):
-                    type_valid = False
-                elif expected_type == "array" and not isinstance(actual_value, list):
-                    type_valid = False
-                elif expected_type == "object" and not isinstance(actual_value, dict):
+                if expected_type == "string" and not isinstance(actual_value, str) or expected_type == "integer" and not isinstance(actual_value, int) or expected_type == "number" and not isinstance(
+                    actual_value, (int, float)
+                ) or expected_type == "boolean" and not isinstance(actual_value, bool) or expected_type == "array" and not isinstance(actual_value, list) or expected_type == "object" and not isinstance(actual_value, dict):
                     type_valid = False
 
                 if not type_valid:
@@ -1258,16 +1261,16 @@ Please fix the issues above and try again. Follow the directory structure instru
             field_type = properties[field_name].get("type")
             value = text.strip()
 
-            if value.startswith('"') and value.endswith('"'):
-                value = value[1:-1]
-            elif value.startswith("'") and value.endswith("'"):
+            if value.startswith('"') and value.endswith('"') or value.startswith("'") and value.endswith("'"):
                 value = value[1:-1]
 
             converted = convert_primitive_value(value, field_type)
             if converted is not None:
                 return {field_name: converted}
 
-        raise json.JSONDecodeError("Could not extract valid JSON from response", text, 0)
+        raise json.JSONDecodeError(
+            "Could not extract valid JSON from response", text, 0
+        )
 
     def _get_model_name(self, response: ClaudeJSONResponse) -> str:
         """Extract model name from Claude response."""
@@ -1294,10 +1297,18 @@ Please fix the issues above and try again. Follow the directory structure instru
         )
 
         return RequestUsage(
-            input_tokens=usage_data.get("input_tokens", 0) if isinstance(usage_data, dict) else 0,
-            cache_write_tokens=usage_data.get("cache_creation_input_tokens", 0) if isinstance(usage_data, dict) else 0,
-            cache_read_tokens=usage_data.get("cache_read_input_tokens", 0) if isinstance(usage_data, dict) else 0,
-            output_tokens=usage_data.get("output_tokens", 0) if isinstance(usage_data, dict) else 0,
+            input_tokens=usage_data.get("input_tokens", 0)
+            if isinstance(usage_data, dict)
+            else 0,
+            cache_write_tokens=usage_data.get("cache_creation_input_tokens", 0)
+            if isinstance(usage_data, dict)
+            else 0,
+            cache_read_tokens=usage_data.get("cache_read_input_tokens", 0)
+            if isinstance(usage_data, dict)
+            else 0,
+            output_tokens=usage_data.get("output_tokens", 0)
+            if isinstance(usage_data, dict)
+            else 0,
             details={
                 "web_search_requests": web_search_requests,
                 "total_cost_usd_cents": int(response.get("total_cost_usd", 0.0) * 100),

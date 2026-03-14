@@ -12,7 +12,9 @@ from typing import Any, cast
 from .utils import convert_primitive_value
 
 
-def _resolve_schema_ref(field_schema: dict[str, Any], root_schema: dict[str, Any]) -> dict[str, Any]:
+def _resolve_schema_ref(
+    field_schema: dict[str, Any], root_schema: dict[str, Any]
+) -> dict[str, Any]:
     """Resolve $ref references in JSON schema.
 
     Args:
@@ -142,9 +144,13 @@ def write_structure_to_filesystem(
         field_type = field_schema.get("type", "string")
 
         if field_type == "array":
-            _write_array_field(field_name, field_value, field_schema, base_path, root_schema)
+            _write_array_field(
+                field_name, field_value, field_schema, base_path, root_schema
+            )
         elif field_type == "object":
-            _write_object_field(field_name, field_value, field_schema, base_path, root_schema)
+            _write_object_field(
+                field_name, field_value, field_schema, base_path, root_schema
+            )
         else:
             _write_scalar_field(field_name, field_value, field_type, base_path)
 
@@ -200,7 +206,9 @@ def _write_array_field(
             if item is None:
                 continue
             item_dir = array_dir / item_name
-            write_structure_to_filesystem(item, items_schema_non_null, item_dir, root_schema)
+            write_structure_to_filesystem(
+                item, items_schema_non_null, item_dir, root_schema
+            )
         else:
             # Array of primitives: None items don't create files (creates gaps)
             if item is None:
@@ -286,9 +294,13 @@ def read_structure_from_filesystem(
 
         # Read the field (will raise error if required but missing and not nullable)
         if field_type == "array":
-            result[field_name] = _read_array_field(field_name, field_schema, base_path, root_schema)
+            result[field_name] = _read_array_field(
+                field_name, field_schema, base_path, root_schema
+            )
         elif field_type == "object":
-            result[field_name] = _read_object_field(field_name, field_schema, base_path, root_schema)
+            result[field_name] = _read_object_field(
+                field_name, field_schema, base_path, root_schema
+            )
         else:
             result[field_name] = _read_scalar_field(field_name, field_type, base_path)
 
@@ -808,7 +820,9 @@ def _build_array_of_objects_example(
         for sub_idx, (sub_name, sub_schema) in enumerate(items_props.items()):
             sub_schema = _resolve_schema_ref(sub_schema, root_schema)
             sub_is_last = sub_idx == len(items_props) - 1
-            field_lines = _format_field_tree_lines(prefix, sub_name, sub_schema, root_schema, sub_is_last)
+            field_lines = _format_field_tree_lines(
+                prefix, sub_name, sub_schema, root_schema, sub_is_last
+            )
             lines.extend(field_lines)
 
     lines.append(f"{indent_str}    ├── [item_0]/")
@@ -862,7 +876,9 @@ def _build_object_example(
         for sub_idx, (sub_name, sub_schema) in enumerate(nested_props.items()):
             sub_schema = _resolve_schema_ref(sub_schema, root_schema)
             sub_is_last = sub_idx == len(nested_props) - 1
-            field_lines = _format_field_tree_lines(prefix, sub_name, sub_schema, root_schema, sub_is_last)
+            field_lines = _format_field_tree_lines(
+                prefix, sub_name, sub_schema, root_schema, sub_is_last
+            )
             lines.extend(field_lines)
     # Object has no defined properties - show template examples with "cannot be empty" indicator
     elif is_last:
@@ -903,13 +919,19 @@ def _build_example_structure(
 
             if item_type == "object":
                 items_props = items_schema_non_null.get("properties", {})
-                lines.extend(_build_array_of_objects_example(indent_str, items_props, root_schema))
+                lines.extend(
+                    _build_array_of_objects_example(
+                        indent_str, items_props, root_schema
+                    )
+                )
             else:
                 lines.extend(_build_array_of_primitives_example(indent_str))
         elif field_type == "object":
             lines.append(f"{indent_str}{branch}{field_name}/{desc_comment}")
             nested_props = field_schema.get("properties", {})
-            lines.extend(_build_object_example(indent_str, is_last, nested_props, root_schema))
+            lines.extend(
+                _build_object_example(indent_str, is_last, nested_props, root_schema)
+            )
         else:
             lines.append(f"{indent_str}{branch}{field_name}.txt{desc_comment}")
 

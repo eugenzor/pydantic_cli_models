@@ -31,12 +31,14 @@ def test_response_saved_to_working_directory():
         # Run a simple query with working_directory setting
         agent.run_sync(
             "What is 2+2? Just give the number.",
-            model_settings=ClaudeCodeModelSettings(working_directory=tmpdir)
+            model_settings=ClaudeCodeModelSettings(working_directory=tmpdir),
         )
 
         # Check that subdirectory was created
         subdirs = [d for d in Path(tmpdir).iterdir() if d.is_dir()]
-        assert len(subdirs) == EXPECTED_SUBDIR_COUNT_SINGLE, f"Expected {EXPECTED_SUBDIR_COUNT_SINGLE} subdirectory, found {len(subdirs)}"
+        assert len(subdirs) == EXPECTED_SUBDIR_COUNT_SINGLE, (
+            f"Expected {EXPECTED_SUBDIR_COUNT_SINGLE} subdirectory, found {len(subdirs)}"
+        )
 
         subdir = subdirs[0]
         assert subdir.name == "1", f"Expected subdir '1', got '{subdir.name}'"
@@ -71,23 +73,37 @@ def test_multiple_calls_create_separate_subdirectories():
         agent = Agent("claude-code:sonnet")
 
         # Make first call
-        agent.run_sync("What is 1+1?", model_settings=ClaudeCodeModelSettings(working_directory=tmpdir))
+        agent.run_sync(
+            "What is 1+1?",
+            model_settings=ClaudeCodeModelSettings(working_directory=tmpdir),
+        )
 
         # Make second call
-        agent.run_sync("What is 2+2?", model_settings=ClaudeCodeModelSettings(working_directory=tmpdir))
+        agent.run_sync(
+            "What is 2+2?",
+            model_settings=ClaudeCodeModelSettings(working_directory=tmpdir),
+        )
 
         # Check that two subdirectories were created
         subdirs = sorted([d for d in Path(tmpdir).iterdir() if d.is_dir()])
-        assert len(subdirs) == EXPECTED_SUBDIR_COUNT_DOUBLE, f"Expected {EXPECTED_SUBDIR_COUNT_DOUBLE} subdirectories, found {len(subdirs)}"
+        assert len(subdirs) == EXPECTED_SUBDIR_COUNT_DOUBLE, (
+            f"Expected {EXPECTED_SUBDIR_COUNT_DOUBLE} subdirectories, found {len(subdirs)}"
+        )
 
         # Check subdirectory names
-        assert subdirs[0].name == "1", f"Expected first subdir '1', got '{subdirs[0].name}'"
-        assert subdirs[1].name == "2", f"Expected second subdir '2', got '{subdirs[1].name}'"
+        assert subdirs[0].name == "1", (
+            f"Expected first subdir '1', got '{subdirs[0].name}'"
+        )
+        assert subdirs[1].name == "2", (
+            f"Expected second subdir '2', got '{subdirs[1].name}'"
+        )
 
         # Check that each has prompt.md and response.json
         for subdir in subdirs:
             assert (subdir / "prompt.md").exists(), f"{subdir.name}/prompt.md not found"
-            assert (subdir / "response.json").exists(), f"{subdir.name}/response.json not found"
+            assert (subdir / "response.json").exists(), (
+                f"{subdir.name}/response.json not found"
+            )
 
 
 def test_temp_workspace_no_overwrite():
@@ -103,31 +119,45 @@ def test_temp_workspace_no_overwrite():
         # Make first call
         result1 = agent.run_sync(
             "What is 1+1?",
-            model_settings=ClaudeCodeModelSettings(working_directory=tmpdir)
+            model_settings=ClaudeCodeModelSettings(working_directory=tmpdir),
         )
         assert result1.output is not None, "Expected result output"
 
         # Check that subdirectory '1' was created
-        subdirs_after_first = sorted([d for d in temp_workspace.iterdir() if d.is_dir()])
-        assert len(subdirs_after_first) == 1, f"Expected 1 subdirectory after first call, found {len(subdirs_after_first)}"
-        assert subdirs_after_first[0].name == "1", f"Expected first subdir '1', got '{subdirs_after_first[0].name}'"
+        subdirs_after_first = sorted(
+            [d for d in temp_workspace.iterdir() if d.is_dir()]
+        )
+        assert len(subdirs_after_first) == 1, (
+            f"Expected 1 subdirectory after first call, found {len(subdirs_after_first)}"
+        )
+        assert subdirs_after_first[0].name == "1", (
+            f"Expected first subdir '1', got '{subdirs_after_first[0].name}'"
+        )
 
         # Make second call with same working directory
         result2 = agent.run_sync(
             "What is 2+2?",
-            model_settings=ClaudeCodeModelSettings(working_directory=tmpdir)
+            model_settings=ClaudeCodeModelSettings(working_directory=tmpdir),
         )
         assert result2.output is not None, "Expected result output"
 
         # Check that subdirectory '2' was created
-        subdirs_after_second = sorted([d for d in temp_workspace.iterdir() if d.is_dir()])
-        assert len(subdirs_after_second) == EXPECTED_SUBDIR_COUNT_DOUBLE, f"Expected {EXPECTED_SUBDIR_COUNT_DOUBLE} subdirectories after second call, found {len(subdirs_after_second)}"
-        assert subdirs_after_second[1].name == "2", f"Expected second subdir '2', got '{subdirs_after_second[1].name}'"
+        subdirs_after_second = sorted(
+            [d for d in temp_workspace.iterdir() if d.is_dir()]
+        )
+        assert len(subdirs_after_second) == EXPECTED_SUBDIR_COUNT_DOUBLE, (
+            f"Expected {EXPECTED_SUBDIR_COUNT_DOUBLE} subdirectories after second call, found {len(subdirs_after_second)}"
+        )
+        assert subdirs_after_second[1].name == "2", (
+            f"Expected second subdir '2', got '{subdirs_after_second[1].name}'"
+        )
 
         # Verify both have their own prompt.md and response.json
         for subdir in subdirs_after_second:
             assert (subdir / "prompt.md").exists(), f"{subdir.name}/prompt.md not found"
-            assert (subdir / "response.json").exists(), f"{subdir.name}/response.json not found"
+            assert (subdir / "response.json").exists(), (
+                f"{subdir.name}/response.json not found"
+            )
 
         # Verify the user requests are different
         user_request1 = (subdirs_after_second[0] / "user_request.md").read_text()

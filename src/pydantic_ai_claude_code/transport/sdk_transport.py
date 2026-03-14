@@ -15,24 +15,24 @@ import os
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, AsyncIterator, cast
+from typing import Any, cast
 
-from ..core.oauth_handler import detect_oauth_error
-from ..core.retry_logic import (
-    detect_rate_limit,
-    calculate_wait_time,
-    detect_cli_infrastructure_failure,
-)
-from ..core.sandbox_runtime import wrap_command_with_sandbox
+from .._utils import clean_subprocess_env
+from .._utils.file_utils import copy_additional_files, get_next_call_subdirectory
 from ..core.debug_saver import (
     save_prompt_debug,
-    save_response_debug,
     save_raw_response_to_working_dir,
+    save_response_debug,
 )
+from ..core.oauth_handler import detect_oauth_error
+from ..core.retry_logic import (
+    calculate_wait_time,
+    detect_cli_infrastructure_failure,
+    detect_rate_limit,
+)
+from ..core.sandbox_runtime import wrap_command_with_sandbox
 from ..exceptions import ClaudeOAuthError
 from ..types import ClaudeCodeSettings, ClaudeJSONResponse
-from .._utils.file_utils import get_next_call_subdirectory, copy_additional_files
-from .._utils import clean_subprocess_env
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +142,7 @@ class EnhancedCLITransport:
 
                     # Infrastructure failure
                     if should_retry_infra and attempt < MAX_CLI_RETRIES - 1:
-                        backoff_seconds = RETRY_BACKOFF_BASE ** attempt
+                        backoff_seconds = RETRY_BACKOFF_BASE**attempt
                         logger.warning(
                             "CLI infrastructure failure (attempt %d/%d). "
                             "Retrying in %d seconds...",
@@ -153,13 +153,15 @@ class EnhancedCLITransport:
                         await asyncio.sleep(backoff_seconds)
                         continue
                     elif should_retry_infra:
-                        raise RuntimeError("Claude CLI infrastructure failure persisted")
+                        raise RuntimeError(
+                            "Claude CLI infrastructure failure persisted"
+                        )
 
                 except RuntimeError as e:
                     if attempt >= MAX_CLI_RETRIES - 1:
                         raise
                     if detect_cli_infrastructure_failure(str(e)):
-                        backoff_seconds = RETRY_BACKOFF_BASE ** attempt
+                        backoff_seconds = RETRY_BACKOFF_BASE**attempt
                         logger.warning(
                             "CLI infrastructure failure in execution (attempt %d/%d). "
                             "Retrying in %d seconds...",
@@ -177,7 +179,9 @@ class EnhancedCLITransport:
             if self._sandbox_config_path:
                 try:
                     os.unlink(self._sandbox_config_path)
-                    logger.debug("Cleaned up sandbox config file: %s", self._sandbox_config_path)
+                    logger.debug(
+                        "Cleaned up sandbox config file: %s", self._sandbox_config_path
+                    )
                 except OSError:
                     pass  # Best effort cleanup
 
@@ -290,7 +294,9 @@ class EnhancedCLITransport:
 
         # Wrap with sandbox if enabled
         if self.settings.get("use_sandbox_runtime"):
-            cmd, self._sandbox_env, self._sandbox_config_path = wrap_command_with_sandbox(cmd, self.settings)
+            cmd, self._sandbox_env, self._sandbox_config_path = (
+                wrap_command_with_sandbox(cmd, self.settings)
+            )
             self.settings["__sandbox_env"] = self._sandbox_env
 
         return cmd
@@ -360,7 +366,9 @@ class EnhancedCLITransport:
         """
         # Build environment (strip CLAUDECODE to avoid nested-session guard)
         sandbox_env = self.settings.get("__sandbox_env")
-        env = clean_subprocess_env(sandbox_env) if sandbox_env else clean_subprocess_env()
+        env = (
+            clean_subprocess_env(sandbox_env) if sandbox_env else clean_subprocess_env()
+        )
 
         # Create subprocess
         process = await asyncio.create_subprocess_exec(
@@ -430,7 +438,9 @@ class EnhancedCLITransport:
         if is_oauth and oauth_msg:
             raise ClaudeOAuthError(
                 f"Authentication expired after {elapsed:.1f}s: {oauth_msg}",
-                reauth_instruction=oauth_msg if "/login" in oauth_msg else "Please run /login"
+                reauth_instruction=oauth_msg
+                if "/login" in oauth_msg
+                else "Please run /login",
             )
 
         # Check rate limit
@@ -474,9 +484,9 @@ class EnhancedCLITransport:
         """
         # Strip srt diagnostic output
         if raw_stdout.startswith("Running: "):
-            first_newline = raw_stdout.find('\n')
+            first_newline = raw_stdout.find("\n")
             if first_newline > 0:
-                raw_stdout = raw_stdout[first_newline + 1:]
+                raw_stdout = raw_stdout[first_newline + 1 :]
 
         raw_response = json.loads(raw_stdout)
 

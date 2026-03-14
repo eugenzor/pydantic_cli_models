@@ -65,6 +65,7 @@ responsive and accessible."""
 
     # Save to examples directory
     import os
+
     script_dir = os.path.dirname(os.path.abspath(__file__))
     output_path = os.path.join(script_dir, "law_school_landing.html")
     with open(output_path, "w") as f:

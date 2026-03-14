@@ -54,7 +54,6 @@ def test_structured_output_sync():
 
 def test_provider_settings():
     """Test provider with custom settings using model_settings at run-time."""
-    from pydantic_ai_claude_code import ClaudeCodeModel
 
     # New stateless provider pattern
     provider = ClaudeCodeProvider()
@@ -64,7 +63,7 @@ def test_provider_settings():
     # Pass settings at run-time via model_settings
     result = agent.run_sync(
         "What is the capital of France? Just the city name.",
-        model_settings={"verbose": False}
+        model_settings={"verbose": False},
     )
     assert "Paris" in str(result.output)
 
@@ -83,7 +82,6 @@ def test_provider_preset():
     # This tests the claude-code:preset:model format
     # Note: This will only work if the preset is configured
     # For testing, we use the model directly
-    from pydantic_ai_claude_code import ClaudeCodeModel
 
     provider = ClaudeCodeProvider()
     model = provider.create_model("sonnet")

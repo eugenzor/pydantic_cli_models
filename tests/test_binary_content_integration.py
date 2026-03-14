@@ -32,8 +32,8 @@ def test_binary_content_png_image():
     # Use standard Pydantic AI BinaryContent interface
     result = agent.run_sync(
         [
-            'Describe what you see in this image in one short sentence.',
-            BinaryContent(data=image_data, media_type='image/png'),
+            "Describe what you see in this image in one short sentence.",
+            BinaryContent(data=image_data, media_type="image/png"),
         ]
     )
 
@@ -55,8 +55,8 @@ def test_binary_content_jpeg_image():
 
     result = agent.run_sync(
         [
-            'What do you see in this image? Answer in one short sentence.',
-            BinaryContent(data=image_data, media_type='image/jpeg'),
+            "What do you see in this image? Answer in one short sentence.",
+            BinaryContent(data=image_data, media_type="image/jpeg"),
         ]
     )
 
@@ -78,8 +78,8 @@ def test_binary_content_pdf_document():
 
     result = agent.run_sync(
         [
-            'What is the title of this PDF paper? Answer with just the title.',
-            BinaryContent(data=pdf_data, media_type='application/pdf'),
+            "What is the title of this PDF paper? Answer with just the title.",
+            BinaryContent(data=pdf_data, media_type="application/pdf"),
         ]
     )
 
@@ -101,8 +101,8 @@ def test_binary_content_text_file():
 
     result = agent.run_sync(
         [
-            'Summarize the main topic of this text file in one sentence.',
-            BinaryContent(data=text_data, media_type='text/plain'),
+            "Summarize the main topic of this text file in one sentence.",
+            BinaryContent(data=text_data, media_type="text/plain"),
         ]
     )
 
@@ -127,9 +127,13 @@ def test_binary_content_multiple_files():
 
     result = agent.run_sync(
         [
-            'I am sending you two images. How many images did I send? Answer with just the number.',
-            BinaryContent(data=png_data, media_type='image/png', identifier='bert_white'),
-            BinaryContent(data=jpg_data, media_type='image/jpeg', identifier='bert_ernie'),
+            "I am sending you two images. How many images did I send? Answer with just the number.",
+            BinaryContent(
+                data=png_data, media_type="image/png", identifier="bert_white"
+            ),
+            BinaryContent(
+                data=jpg_data, media_type="image/jpeg", identifier="bert_ernie"
+            ),
         ]
     )
 
@@ -137,7 +141,7 @@ def test_binary_content_multiple_files():
     assert result.output is not None
     assert isinstance(result.output, str)
     # Should mention "2" or "two"
-    assert '2' in result.output or 'two' in result.output.lower()
+    assert "2" in result.output or "two" in result.output.lower()
     print(f"Multiple files response: {result.output}")
 
 
@@ -157,10 +161,10 @@ def test_binary_content_preserves_data():
         # Send binary content with a specific working directory so we can inspect it
         result = agent.run_sync(
             [
-                'Acknowledge receipt of the image file.',
-                BinaryContent(data=original_data, media_type='image/png'),
+                "Acknowledge receipt of the image file.",
+                BinaryContent(data=original_data, media_type="image/png"),
             ],
-            model_settings={"working_directory": tmpdir}
+            model_settings={"working_directory": tmpdir},
         )
 
         # Find the created subdirectory
@@ -168,7 +172,7 @@ def test_binary_content_preserves_data():
         assert len(subdirs) >= 1
 
         # Find the PNG file created in the working directory
-        png_files = list(subdirs[0].glob('*.png'))
+        png_files = list(subdirs[0].glob("*.png"))
         assert len(png_files) >= 1, "No PNG file found in working directory"
 
         # Verify the data is preserved
@@ -182,4 +186,5 @@ def test_binary_content_preserves_data():
 
 if __name__ == "__main__":
     import pytest
+
     pytest.main([__file__, "-v", "-s"])

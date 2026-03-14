@@ -86,9 +86,7 @@ class MCPTool:
         Returns:
             Dictionary with server name and config.
         """
-        return {
-            self.server_name: self.to_mcp_config()
-        }
+        return {self.server_name: self.to_mcp_config()}
 
 
 def create_mcp_tools_config(tools: list[MCPTool]) -> dict[str, Any]:

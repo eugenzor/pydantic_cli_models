@@ -6,8 +6,6 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from pydantic_ai_claude_code import (
     ClaudeCodeModel,
     ClaudeCodeProvider,
@@ -121,7 +119,9 @@ class TestProviderPreset:
         env_vars = preset.get_environment_variables(
             template_vars={"ENDPOINT_ID": "ep-12345"}
         )
-        assert env_vars["ANTHROPIC_BASE_URL"] == "https://api.example.com/ep-12345/proxy"
+        assert (
+            env_vars["ANTHROPIC_BASE_URL"] == "https://api.example.com/ep-12345/proxy"
+        )
 
     def test_preset_to_dict(self):
         """Test converting preset to dictionary."""
@@ -717,9 +717,9 @@ class TestProviderPresetDocumentation:
         presets = load_all_presets()
 
         for preset_id, preset in presets.items():
-            assert (
-                preset.category in valid_categories
-            ), f"Preset {preset_id} has invalid category: {preset.category}"
+            assert preset.category in valid_categories, (
+                f"Preset {preset_id} has invalid category: {preset.category}"
+            )
 
     def test_presets_with_models_have_complete_mappings(self):
         """Test that presets with models have all standard mappings."""
@@ -728,9 +728,9 @@ class TestProviderPresetDocumentation:
         for preset_id, preset in presets.items():
             if preset.models:
                 # If models are defined, should have at least default
-                assert (
-                    "default" in preset.models
-                ), f"Preset {preset_id} missing default model"
+                assert "default" in preset.models, (
+                    f"Preset {preset_id} missing default model"
+                )
 
 
 class TestTemplateSubstitutionEdgeCases:
@@ -1065,7 +1065,10 @@ providers:
 
             # Project version should win
             assert presets["deepseek"].name == "Project DeepSeek"
-            assert "project.api.com" in presets["deepseek"].settings["env"]["ANTHROPIC_BASE_URL"]
+            assert (
+                "project.api.com"
+                in presets["deepseek"].settings["env"]["ANTHROPIC_BASE_URL"]
+            )
 
             # User-only preset should be included
             assert "user_only" in presets
@@ -1363,9 +1366,9 @@ class TestPresetValidation:
 
         for preset in presets:
             env_vars = preset.get_environment_variables()
-            assert (
-                "ANTHROPIC_BASE_URL" in env_vars
-            ), f"Preset {preset.preset_id} missing ANTHROPIC_BASE_URL"
+            assert "ANTHROPIC_BASE_URL" in env_vars, (
+                f"Preset {preset.preset_id} missing ANTHROPIC_BASE_URL"
+            )
 
     def test_all_aggregators_have_base_url(self):
         """Test that all aggregator presets have base URL configured."""
@@ -1376,19 +1379,22 @@ class TestPresetValidation:
             env_vars = preset.get_environment_variables()
             # At minimum should have ANTHROPIC_BASE_URL in settings
             assert len(preset.settings.get("env", {})) > 0
-            assert "ANTHROPIC_BASE_URL" in env_vars, \
+            assert "ANTHROPIC_BASE_URL" in env_vars, (
                 f"Aggregator preset {preset.preset_id} missing ANTHROPIC_BASE_URL"
+            )
 
     def test_presets_have_valid_urls(self):
         """Test that preset URLs are valid."""
         presets = load_all_presets()
 
         for preset_id, preset in presets.items():
-            assert preset.website_url.startswith("http"), \
+            assert preset.website_url.startswith("http"), (
                 f"Preset {preset_id} has invalid website_url"
+            )
             if preset.api_key_url:
-                assert preset.api_key_url.startswith("http"), \
+                assert preset.api_key_url.startswith("http"), (
                     f"Preset {preset_id} has invalid api_key_url"
+                )
 
 
 class TestPresetModelMappings:

@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 def strip_markdown_code_fence(text: str) -> str:
     """
     Remove surrounding Markdown code fence markers and return the inner content.
-    
+
     Parameters:
         text (str): Input text that may be wrapped with Markdown code fences (for example, ```json ... ```).
-    
+
     Returns:
         str: The input text with surrounding code fence markers removed and leading/trailing whitespace trimmed.
     """
@@ -36,7 +36,9 @@ def strip_markdown_code_fence(text: str) -> str:
     return cleaned.strip()
 
 
-def extract_json_from_text(text: str, schema: dict[str, Any] | None = None) -> dict[str, Any] | None:
+def extract_json_from_text(
+    text: str, schema: dict[str, Any] | None = None
+) -> dict[str, Any] | None:
     """
     Extract a JSON object from a text blob using multiple fallback strategies.
 

@@ -305,10 +305,16 @@ class TestJSONAssembly:
 
             assert len(result["items"]) == LARGE_ARRAY_SIZE
             assert result["items"][0] == "item_0"
-            assert result["items"][LARGE_ARRAY_SIZE - 1] == f"item_{LARGE_ARRAY_SIZE - 1}"
+            assert (
+                result["items"][LARGE_ARRAY_SIZE - 1] == f"item_{LARGE_ARRAY_SIZE - 1}"
+            )
 
     def _create_recommendation_item(
-        self, array_dir: Path, item_num: str, priority: int, data: tuple[list[str], str, str]
+        self,
+        array_dir: Path,
+        item_num: str,
+        priority: int,
+        data: tuple[list[str], str, str],
     ) -> None:
         """Create a single recommendation item in the filesystem.
 
@@ -340,13 +346,22 @@ class TestJSONAssembly:
         array_dir.mkdir()
 
         self._create_recommendation_item(
-            array_dir, "0000", priority_1, (["clarity", "impact"], "Lacks detail", "Add examples")
+            array_dir,
+            "0000",
+            priority_1,
+            (["clarity", "impact"], "Lacks detail", "Add examples"),
         )
         self._create_recommendation_item(
-            array_dir, "0001", priority_2, (["feasibility"], "Budget unclear", "Include cost breakdown")
+            array_dir,
+            "0001",
+            priority_2,
+            (["feasibility"], "Budget unclear", "Include cost breakdown"),
         )
         self._create_recommendation_item(
-            array_dir, "0002", priority_3, (["innovation"], "Incremental improvements", "Highlight novel approach")
+            array_dir,
+            "0002",
+            priority_3,
+            (["innovation"], "Incremental improvements", "Highlight novel approach"),
         )
 
         (tmp_path / ".complete").touch()
@@ -363,7 +378,9 @@ class TestJSONAssembly:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
-            self._create_recommendation_filesystem(tmp_path, priority_1, priority_2, priority_3)
+            self._create_recommendation_filesystem(
+                tmp_path, priority_1, priority_2, priority_3
+            )
 
             # Schema matching ImprovementRecommendation from the bug report
             schema = {
@@ -395,7 +412,10 @@ class TestJSONAssembly:
             assert isinstance(result["recommendations"][0], dict)
             assert result["recommendations"][0]["priority"] == priority_1
             assert isinstance(result["recommendations"][0]["criteria_addressed"], list)
-            assert result["recommendations"][0]["criteria_addressed"] == ["clarity", "impact"]
+            assert result["recommendations"][0]["criteria_addressed"] == [
+                "clarity",
+                "impact",
+            ]
             assert result["recommendations"][0]["current_weakness"] == "Lacks detail"
             assert result["recommendations"][0]["specific_action"] == "Add examples"
 

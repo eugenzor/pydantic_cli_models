@@ -1,7 +1,8 @@
 """Tests for CCTools class."""
 
 import pytest
-from pydantic_ai_claude_code.cc_tools import CCTools, ToolDefinition, PermissionResult
+
+from pydantic_ai_claude_code.cc_tools import CCTools, PermissionResult
 
 
 class TestToolRegistration:
@@ -14,7 +15,10 @@ class TestToolRegistration:
         tool = tools.register_tool(
             name="test_tool",
             description="A test tool",
-            parameters_schema={"type": "object", "properties": {"x": {"type": "string"}}},
+            parameters_schema={
+                "type": "object",
+                "properties": {"x": {"type": "string"}},
+            },
         )
 
         assert tool.name == "test_tool"
@@ -56,10 +60,10 @@ class TestToolRegistration:
         async def my_handler(x: str) -> str:
             """
             Process the input string by prefixing it with "processed: ".
-            
+
             Parameters:
                 x (str): Input string to be processed.
-            
+
             Returns:
                 result (str): The input string prefixed with "processed: ".
             """
@@ -143,12 +147,12 @@ class TestPermissions:
         async def custom_callback(name, input, context):
             """
             Allow the specified tool invocation unconditionally with a custom message.
-            
+
             Parameters:
                 name (str): The registered tool name being queried.
                 input (dict | Any): The input arguments provided for the tool invocation.
                 context (Any): Additional context for the permission decision (e.g., call metadata).
-            
+
             Returns:
                 PermissionResult: A result with `behavior` set to `"allow"` and `message` set to `"Custom allowed"`.
             """
@@ -215,7 +219,7 @@ class TestToolExecution:
         async def add(a: int, b: int) -> int:
             """
             Compute the sum of two integers.
-            
+
             Returns:
                 The sum of a and b.
             """
@@ -240,7 +244,7 @@ class TestToolExecution:
         async def greet(name: str) -> str:
             """
             Return a greeting message for the given name.
-            
+
             Returns:
                 Greeting string in the form "Hello, {name}!".
             """
@@ -293,7 +297,7 @@ class TestToolExecution:
         async def fail() -> str:
             """
             Raise a ValueError used to simulate an intentional failure for testing.
-            
+
             Raises:
                 ValueError: "Intentional failure"
             """

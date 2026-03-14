@@ -42,7 +42,7 @@ def register_claude_code_model() -> None:
             from .provider import ClaudeCodeProvider
 
             parts = model.split(":", 2)
-            provider = ClaudeCodeProvider()
+            provider = ClaudeCodeProvider._default_instance or ClaudeCodeProvider()
 
             if len(parts) == 2:
                 # Format: claude-code:model_name
@@ -71,7 +71,9 @@ def register_claude_code_model() -> None:
                     provider_preset,
                     model_name,
                 )
-                return provider.create_model(model_name, provider_preset=provider_preset)
+                return provider.create_model(
+                    model_name, provider_preset=provider_preset
+                )
 
         return _original_infer(model)
 

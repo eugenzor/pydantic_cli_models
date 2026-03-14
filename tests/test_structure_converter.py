@@ -72,10 +72,18 @@ def test_simple_scalar_types_round_trip():
         write_structure_to_filesystem(loaded_data, schema, base_path2)
 
         # Verify file contents are identical
-        assert (base_path2 / "name.txt").read_text() == (base_path / "name.txt").read_text()
-        assert (base_path2 / "age.txt").read_text() == (base_path / "age.txt").read_text()
-        assert (base_path2 / "score.txt").read_text() == (base_path / "score.txt").read_text()
-        assert (base_path2 / "active.txt").read_text() == (base_path / "active.txt").read_text()
+        assert (base_path2 / "name.txt").read_text() == (
+            base_path / "name.txt"
+        ).read_text()
+        assert (base_path2 / "age.txt").read_text() == (
+            base_path / "age.txt"
+        ).read_text()
+        assert (base_path2 / "score.txt").read_text() == (
+            base_path / "score.txt"
+        ).read_text()
+        assert (base_path2 / "active.txt").read_text() == (
+            base_path / "active.txt"
+        ).read_text()
 
 
 def test_array_of_primitives_round_trip():
@@ -231,7 +239,9 @@ def test_nested_object_round_trip():
         write_structure_to_filesystem(loaded_data, schema, base_path2)
 
         # Verify identical structure
-        assert (base_path2 / "title.txt").read_text() == (base_path / "title.txt").read_text()
+        assert (base_path2 / "title.txt").read_text() == (
+            base_path / "title.txt"
+        ).read_text()
         assert (base_path2 / "author" / "first_name.txt").read_text() == (
             base_path / "author" / "first_name.txt"
         ).read_text()
@@ -287,13 +297,17 @@ def test_array_of_objects_round_trip():
 
         # Verify first chapter
         assert (base_path / "chapters" / "0000" / "number.txt").read_text() == "1"
-        assert (base_path / "chapters" / "0000" / "title.txt").read_text() == "Introduction"
+        assert (
+            base_path / "chapters" / "0000" / "title.txt"
+        ).read_text() == "Introduction"
         assert (base_path / "chapters" / "0000" / "pages.txt").read_text() == "15"
         assert (base_path / "chapters" / "0000" / "completed.txt").read_text() == "true"
 
         # Verify second chapter
         assert (base_path / "chapters" / "0001" / "number.txt").read_text() == "2"
-        assert (base_path / "chapters" / "0001" / "title.txt").read_text() == "Getting Started"
+        assert (
+            base_path / "chapters" / "0001" / "title.txt"
+        ).read_text() == "Getting Started"
 
         # Filesystem → Data
         loaded_data = read_structure_from_filesystem(schema, base_path)
@@ -312,17 +326,23 @@ def test_array_of_objects_round_trip():
         # Verify identical structure
         for i in range(num_chapters):
             chapter_dir = f"{i:04d}"
-            assert (base_path2 / "chapters" / chapter_dir / "number.txt").read_text() == (
+            assert (
+                base_path2 / "chapters" / chapter_dir / "number.txt"
+            ).read_text() == (
                 base_path / "chapters" / chapter_dir / "number.txt"
             ).read_text()
-            assert (base_path2 / "chapters" / chapter_dir / "title.txt").read_text() == (
+            assert (
+                base_path2 / "chapters" / chapter_dir / "title.txt"
+            ).read_text() == (
                 base_path / "chapters" / chapter_dir / "title.txt"
             ).read_text()
 
 
 def _verify_complex_nested_filesystem(base_path: Path) -> None:
     """Verify filesystem structure for complex nested test."""
-    assert (base_path / "course_name.txt").read_text() == "Machine Learning Fundamentals"
+    assert (
+        base_path / "course_name.txt"
+    ).read_text() == "Machine Learning Fundamentals"
     assert (base_path / "instructor" / "name.txt").read_text() == "Dr. Sarah Chen"
     assert (base_path / "instructor" / "years_experience.txt").read_text() == "12"
 
@@ -330,9 +350,15 @@ def _verify_complex_nested_filesystem(base_path: Path) -> None:
     assert (base_path / "students" / "0000" / "student_id.txt").read_text() == "1001"
     assert (base_path / "students" / "0000" / "name.txt").read_text() == "Bob Wilson"
     assert (base_path / "students" / "0000" / "grades").is_dir()
-    assert (base_path / "students" / "0000" / "grades" / "0000.txt").read_text() == "88.5"
-    assert (base_path / "students" / "0000" / "grades" / "0001.txt").read_text() == "92.0"
-    assert (base_path / "students" / "0000" / "grades" / "0002.txt").read_text() == "85.5"
+    assert (
+        base_path / "students" / "0000" / "grades" / "0000.txt"
+    ).read_text() == "88.5"
+    assert (
+        base_path / "students" / "0000" / "grades" / "0001.txt"
+    ).read_text() == "92.0"
+    assert (
+        base_path / "students" / "0000" / "grades" / "0002.txt"
+    ).read_text() == "85.5"
     assert (base_path / "students" / "0000" / "passed.txt").read_text() == "true"
     assert (base_path / "students" / "0002" / "student_id.txt").read_text() == "1003"
     assert (base_path / "students" / "0002" / "passed.txt").read_text() == "false"
@@ -426,8 +452,12 @@ def test_complex_deeply_nested_round_trip():
         assert len(loaded_data["students"]) == num_students
         assert all(type(s["student_id"]) is int for s in loaded_data["students"])
         assert all(type(s["passed"]) is bool for s in loaded_data["students"])
-        assert all(len(s["grades"]) == num_grades_per_student for s in loaded_data["students"])
-        assert all(type(g) is float for s in loaded_data["students"] for g in s["grades"])
+        assert all(
+            len(s["grades"]) == num_grades_per_student for s in loaded_data["students"]
+        )
+        assert all(
+            type(g) is float for s in loaded_data["students"] for g in s["grades"]
+        )
 
         # Data → Filesystem again
         base_path2 = Path(tmpdir) / "data2"
@@ -440,7 +470,9 @@ def test_complex_deeply_nested_round_trip():
         assert (base_path2 / "instructor" / "years_experience.txt").read_text() == (
             base_path / "instructor" / "years_experience.txt"
         ).read_text()
-        assert (base_path2 / "students" / "0000" / "grades" / "0001.txt").read_text() == (
+        assert (
+            base_path2 / "students" / "0000" / "grades" / "0001.txt"
+        ).read_text() == (
             base_path / "students" / "0000" / "grades" / "0001.txt"
         ).read_text()
         assert (base_path2 / "students" / "0002" / "passed.txt").read_text() == (
@@ -485,7 +517,10 @@ def test_integer_vs_float_preservation():
         # Verify type preservation
         assert loaded_data == original_data
         assert type(loaded_data["int_value"]) is int
-        assert type(loaded_data["float_value"]) in (int, float)  # 42.0 might load as int
+        assert type(loaded_data["float_value"]) in (
+            int,
+            float,
+        )  # 42.0 might load as int
         assert all(type(v) is int for v in loaded_data["int_array"])
         # Float array should preserve float types even for whole numbers
         assert any(type(v) is float for v in loaded_data["float_array"])
@@ -542,7 +577,10 @@ def test_optional_fields_missing_from_filesystem():
     """
     schema = {
         "properties": {
-            "needs_research": {"type": "boolean", "description": "Whether research is needed"},
+            "needs_research": {
+                "type": "boolean",
+                "description": "Whether research is needed",
+            },
             "queries": {
                 "type": "array",
                 "items": {"type": "string"},
@@ -569,7 +607,9 @@ def test_optional_fields_missing_from_filesystem():
         # Create filesystem with only required fields
         # (simulating Claude not creating optional fields)
         (base_path / "needs_research.txt").write_text("false")
-        (base_path / "rationale.txt").write_text("This is basic math, no research needed")
+        (base_path / "rationale.txt").write_text(
+            "This is basic math, no research needed"
+        )
 
         # Filesystem → Data (should NOT raise error for missing optional fields)
         loaded_data = read_structure_from_filesystem(schema, base_path)
@@ -689,12 +729,14 @@ def test_pydantic_generated_schema_with_ref_references():
 
     class NestedModel(BaseModel):
         """A nested model with multiple fields."""
+
         priority: int = Field(description="Priority level (1-10)")
         action: str = Field(description="Action to take")
         details: str | None = Field(default=None, description="Optional details")
 
     class ParentModel(BaseModel):
         """Parent model containing a list of nested models."""
+
         summary: str = Field(description="Summary text")
         items: list[NestedModel] = Field(description="List of nested items")
         tags: list[str] = Field(description="Simple string list for comparison")
@@ -710,7 +752,11 @@ def test_pydantic_generated_schema_with_ref_references():
     original_data = {
         "summary": "Test summary",
         "items": [
-            {"priority": priority_first, "action": "First action", "details": "Some details"},
+            {
+                "priority": priority_first,
+                "action": "First action",
+                "details": "Some details",
+            },
             {"priority": priority_second, "action": "Second action", "details": None},
         ],
         "tags": ["tag1", "tag2"],
@@ -764,8 +810,12 @@ def test_build_instructions_with_ref_references():
     # Verify instructions don't incorrectly say "numbered files (.txt)" for objects
     # (This was the bug - treating nested objects as primitives)
     items_section = instructions.split("- items:")[1].split("-")[0]
-    assert "0000.txt" not in items_section  # Should NOT mention .txt files for nested objects
-    assert "0000/" in items_section or "subdirectories" in items_section  # Should mention subdirectories
+    assert (
+        "0000.txt" not in items_section
+    )  # Should NOT mention .txt files for nested objects
+    assert (
+        "0000/" in items_section or "subdirectories" in items_section
+    )  # Should mention subdirectories
 
 
 def test_none_vs_empty_string_distinction():
@@ -964,11 +1014,13 @@ def test_nested_list_fields_in_array_of_objects_example():
 
     class NestedWithList(BaseModel):
         """Object with a list[str] field."""
+
         name: str = Field(description="Name field")
         tags: list[str] = Field(description="List of tags")
 
     class Container(BaseModel):
         """Container with array of objects that have list[str] fields."""
+
         items: list[NestedWithList] = Field(description="Items")
 
     # Generate instructions using Pydantic schema (which includes $ref)
@@ -986,18 +1038,18 @@ def test_nested_list_fields_in_array_of_objects_example():
     )
 
     # Verify the example structure shows correct format
-    lines = instructions.split('\n')
+    lines = instructions.split("\n")
     in_example = False
     found_tags_dir = False
     found_tags_file = False
 
     for line in lines:
-        if '## Example Structure' in line:
+        if "## Example Structure" in line:
             in_example = True
         if in_example:
-            if 'tags/' in line and '#' in line:
+            if "tags/" in line and "#" in line:
                 found_tags_dir = True
-            if 'tags.txt' in line and '#' in line:
+            if "tags.txt" in line and "#" in line:
                 found_tags_file = True
 
     assert found_tags_dir, "Example should show 'tags/' as directory"
@@ -1048,7 +1100,9 @@ def test_production_model_structure_example():
         suggested_text: str | None = Field(description="Suggested text")
 
     class ImprovementPlan(BaseModel):
-        recommendations: list[ImprovementRecommendation] = Field(description="List of recommendations")
+        recommendations: list[ImprovementRecommendation] = Field(
+            description="List of recommendations"
+        )
 
     schema = ImprovementPlan.model_json_schema()
     instructions = build_structure_instructions(schema, "/tmp/test")
@@ -1065,21 +1119,23 @@ def test_production_model_structure_example():
     )
 
     # Verify example structure shows numbered files under criteria_addressed/
-    lines = instructions.split('\n')
+    lines = instructions.split("\n")
     found_criteria_dir = False
     found_numbered_files = False
 
     for i, line in enumerate(lines):
-        if 'criteria_addressed/' in line and '#' in line:
+        if "criteria_addressed/" in line and "#" in line:
             found_criteria_dir = True
             # Check next few lines for numbered files
-            for j in range(i+1, min(i+4, len(lines))):
-                if '0000.txt' in lines[j]:
+            for j in range(i + 1, min(i + 4, len(lines))):
+                if "0000.txt" in lines[j]:
                     found_numbered_files = True
                     break
 
     assert found_criteria_dir, "Example should show 'criteria_addressed/' directory"
-    assert found_numbered_files, "Example should show numbered files under criteria_addressed/"
+    assert found_numbered_files, (
+        "Example should show numbered files under criteria_addressed/"
+    )
 
 
 if __name__ == "__main__":
